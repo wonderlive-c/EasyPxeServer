@@ -1,4 +1,4 @@
-#!ipxe
+﻿#!ipxe
    set menu-timeout 30000
    set menu-default centos7
    set xieyi:string http

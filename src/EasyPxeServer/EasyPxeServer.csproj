@@ -4,9 +4,14 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="tftpboot\ts\**" />
+    <Content Remove="tftpboot\ts\**" />
+    <EmbeddedResource Remove="tftpboot\ts\**" />
+    <None Remove="tftpboot\ts\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Remove="log.txt" />
