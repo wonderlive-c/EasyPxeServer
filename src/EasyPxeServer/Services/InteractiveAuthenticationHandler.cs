@@ -32,8 +32,8 @@ namespace EasyPxeServer.Services
     {
         private readonly ILogger<InteractiveAuthenticationHandler> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        public Interaction<PasswordPromptRequest, PasswordPromptResponse>       EnterPasswordInteraction    { get; } = new Interaction<PasswordPromptRequest, PasswordPromptResponse>();
-        public Interaction<CredentialsPromptRequest, CredentialsPromptResponse> EnterCredentialsInteraction { get; } = new Interaction<CredentialsPromptRequest, CredentialsPromptResponse>();
+        private Interaction<PasswordPromptRequest, PasswordPromptResponse>       EnterPasswordInteraction    { get; } = new();
+        private Interaction<CredentialsPromptRequest, CredentialsPromptResponse> EnterCredentialsInteraction { get; } = new();
 
         /// <inheritdoc />
         public async Task<TInput> ProvideAuthenticationInputAsync<TInput>(RfbConnection connection, ISecurityType securityType, IAuthenticationInputRequest<TInput> request)

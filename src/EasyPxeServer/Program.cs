@@ -34,7 +34,7 @@ if (Environment.OSVersion.Platform is PlatformID.Win32Windows or PlatformID.Win3
 }
 
 
-Log.Logger = new LoggerConfiguration().WriteTo.File("log.txt").WriteTo.Console().MinimumLevel.Debug().CreateBootstrapLogger();
+Log.Logger = new LoggerConfiguration().WriteTo.File("log.txt").WriteTo.Console().CreateBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile(@"appsettings.log.json");
@@ -59,7 +59,7 @@ builder.Services.AddVncClientServices(options =>
 
 // Add application-specific services
 builder.Services.AddScoped<ConnectionManager>();
-builder.Services.AddScoped<InteractiveAuthenticationHandler>();
+builder.Services.AddSingleton<InteractiveAuthenticationHandler>();
 
 var app = builder.Build();
 

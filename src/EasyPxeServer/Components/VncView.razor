@@ -1,8 +1,9 @@
 ﻿@using EasyPxeServer.Services
+@using MarcusW.VncClient
 
 @namespace EasyPxeServer.Components
 
-@if (Connection == null || !Connection.IsConnected)
+@if (Connection is not { ConnectionState: ConnectionState.Connected })
 {
     <div class="vnc-placeholder">
         <p>@(Connection == null ? "请选择一个VNC会话" : "连接已断开")</p>
@@ -11,23 +12,14 @@
 else
 {
     <div class="vnc-canvas-container">
-        <!-- 模拟的VNC显示区域 -->
-        <div class="vnc-canvas" @onmousedown="HandleMouseDown" @onmousemove="HandleMouseMove" @onmouseup="HandleMouseUp" @onwheel="HandleMouseWheel">
-            <div class="vnc-display">
-                <div class="vnc-status">已连接到: @Connection.Host:@Connection.Port</div>
-                <div class="vnc-placeholder-text">
-                    <p>这是一个模拟的VNC视图</p>
-                    <p>实际应用中这里会显示远程桌面</p>
-                    <p>鼠标事件会被捕获并发送到远程服务器</p>
-                </div>
-            </div>
-        </div>
+        <VncView @ref="_vncView" Connection="Connection"/>
     </div>
 }
 
 @code {
+
     [Parameter]
-    public IVncConnection? Connection { get; set; }
+    public RfbConnection? Connection { get; set; }
 
     [Parameter]
     public EventCallback<Exception> OnConnectionError { get; set; }
@@ -37,111 +29,10 @@ else
 
     private MouseButton _currentMouseButtons = MouseButton.None;
 
-    // 处理鼠标按下事件
-    private async Task HandleMouseDown(MouseEventArgs e)
-    {
-        if (Connection == null || !Connection.IsConnected)
-            return;
-
-        _currentMouseButtons = GetMouseButtonFromEvent(e);
-        try
-        {
-            await Connection.SendPointerEventAsync(
-                (int)e.ClientX,
-                (int)e.ClientY,
-                _currentMouseButtons);
-        }
-        catch (Exception ex)
-        {
-            await OnConnectionError.InvokeAsync(ex);
-        }
-    }
-
-    // 处理鼠标移动事件
-    private async Task HandleMouseMove(MouseEventArgs e)
-    {
-        if (Connection == null || !Connection.IsConnected)
-            return;
-
-        try
-        {
-            await Connection.SendPointerEventAsync(
-                (int)e.ClientX,
-                (int)e.ClientY,
-                _currentMouseButtons);
-        }
-        catch (Exception ex)
-        {
-            await OnConnectionError.InvokeAsync(ex);
-        }
-    }
-
-    // 处理鼠标释放事件
-    private async Task HandleMouseUp(MouseEventArgs e)
-    {
-        if (Connection == null || !Connection.IsConnected)
-            return;
-
-        _currentMouseButtons = MouseButton.None;
-        try
-        {
-            await Connection.SendPointerEventAsync(
-                (int)e.ClientX,
-                (int)e.ClientY,
-                _currentMouseButtons);
-        }
-        catch (Exception ex)
-        {
-            await OnConnectionError.InvokeAsync(ex);
-        }
-    }
-
-    // 处理鼠标滚轮事件
-    private async Task HandleMouseWheel(WheelEventArgs e)
-    {
-        if (Connection == null || !Connection.IsConnected)
-            return;
-
-        MouseButton wheelButton = e.DeltaY < 0 ? MouseButton.WheelUp : MouseButton.WheelDown;
-        try
-        {
-            // 发送滚轮按下事件
-            await Connection.SendPointerEventAsync(
-                (int)e.ClientX,
-                (int)e.ClientY,
-                wheelButton);
-            
-            // 立即发送滚轮释放事件
-            await Connection.SendPointerEventAsync(
-                (int)e.ClientX,
-                (int)e.ClientY,
-                MouseButton.None);
-        }
-        catch (Exception ex)
-        {
-            await OnConnectionError.InvokeAsync(ex);
-        }
-    }
-
-    // 从鼠标事件中获取鼠标按钮
-    private MouseButton GetMouseButtonFromEvent(MouseEventArgs e)
-    {
-        MouseButton button = MouseButton.None;
-        if (e.Button == 0) button |= MouseButton.Left;
-        if (e.Button == 1) button |= MouseButton.Middle;
-        if (e.Button == 2) button |= MouseButton.Right;
-        return button;
-    }
+    private VncView? _vncView;
 
     // 组件初始化时添加连接事件监听
-    protected override void OnInitialized()
-    {
-        if (Connection != null)
-        {
-            Connection.ConnectionError += OnConnectionErrorHandler;
-            Connection.ConnectionClosed += OnConnectionClosedHandler;
-        }
-    }
+    protected override void OnInitialized() { }
 
     // 当连接属性变化时更新事件监听
     protected override void OnParametersSet()
@@ -150,26 +41,13 @@ else
     }
 
     // 处理连接错误事件
-    private async void OnConnectionErrorHandler(Exception ex)
-    {
-        await OnConnectionError.InvokeAsync(ex);
-    }
+    private async void OnConnectionErrorHandler(Exception ex) { await OnConnectionError.InvokeAsync(ex); }
 
     // 处理连接关闭事件
-    private async void OnConnectionClosedHandler()
-    {
-        await OnConnectionClosed.InvokeAsync(null);
-    }
+    private async void OnConnectionClosedHandler() { await OnConnectionClosed.InvokeAsync(null); }
 
     // 组件销毁时移除事件监听
-    public void Dispose()
-    {
-        if (Connection != null)
-        {
-            Connection.ConnectionError -= OnConnectionErrorHandler;
-            Connection.ConnectionClosed -= OnConnectionClosedHandler;
-        }
-    }
+    public void Dispose() { }
 }
 
 <style>

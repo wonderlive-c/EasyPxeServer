@@ -3,6 +3,7 @@
 @using System.Net.Sockets
 @using EasyPxeServer.Services
 @using EasyPxeServer.Components
+@using MarcusW.VncClient
 @inject IJSRuntime JsRuntime;
 
 @inject VncService VncService
@@ -227,22 +228,22 @@
 </style>
 
 @code {
-    private string          Host              { get; set; } = string.Empty;
-    private int             Port              { get; set; } = 5900;
-    private string          Password          { get; set; } = string.Empty;
-    private bool            Connecting        { get; set; } = false;
-    private string?         SelectedSessionId { get; set; }
-    private IVncConnection? CurrentConnection { get; set; }
-    private VncView?        VncViewRef        { get; set; }
-    private bool            ConnectionError   { get; set; } = false;
+    private string         Host              { get; set; } = "10.10.10.10";
+    private int            Port              { get; set; } = 5901;
+    private string         Password          { get; set; } = string.Empty;
+    private bool           Connecting        { get; set; } = false;
+    private string?        SelectedSessionId { get; set; }
+    private RfbConnection? CurrentConnection { get; set; }
+    private VncView?       VncViewRef        { get; set; }
+    private bool           ConnectionError   { get; set; } = false;
 
     private List<VncSessionInfo> ActiveSessions => VncService.GetActiveSessions();
 
     protected override void OnInitialized()
     {
         // 监听会话变化
-        VncService.SessionCreated += OnSessionCreated;
-        VncService.SessionClosed  += OnSessionClosed;
+        VncService.SessionCreated += (id, sess) => InvokeAsync(() => OnSessionCreated(id, sess));
+        VncService.SessionClosed += (id) => InvokeAsync(() => OnSessionClosed(id)); ;
     }
 
     private async Task ConnectToVncAsync()
@@ -259,7 +260,8 @@
             Connecting = true;
             var sessionId = await VncService.CreateSessionAsync(Host, Port, Password);
             SelectSession(sessionId);
-            await JsRuntime.InvokeVoidAsync("alert", "VNC连接已建立");
+            //await JsRuntime.InvokeVoidAsync("alert", "VNC连接已建立");
+            await InvokeAsync(() => JsRuntime.InvokeVoidAsync("alert", "VNC连接已建立"));
         }
         catch (Exception ex) { await JsRuntime.InvokeVoidAsync("alert", "连接VNC服务器失败：" + ex.Message); }
         finally { Connecting = false; }

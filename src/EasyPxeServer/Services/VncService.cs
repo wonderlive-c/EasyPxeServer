@@ -1,119 +1,25 @@
-﻿using System.Net;
+﻿using MarcusW.VncClient;
 using MarcusW.VncClient.Protocol.Implementation;
+using MarcusW.VncClient.Protocol.Implementation.Services.Transports;
 using ReactiveUI;
+using System.Net;
+using System.Threading;
+using MarcusW.VncClient.Blazor.Extensions;
+using MarcusW.VncClient.Rendering;
 
 namespace EasyPxeServer.Services
 {
-    // 定义IVncConnection接口，因为当前包版本中可能找不到这个接口
-    public interface IVncConnection : IDisposable
-    {
-        bool                     IsConnected { get; }
-        string                   Host        { get; set; }
-        int                      Port        { get; set; }
-        Task                     DisconnectAsync();
-        Task                     SendKeyEventAsync(ushort  keyCode, bool isPressed);
-        Task                     SendPointerEventAsync(int x,       int  y, MouseButton buttons);
-        event Action<Exception>? ConnectionError;
-        event Action?            ConnectionClosed;
-    }
-
-    // 定义IConnectionCredentials接口
-    public interface IConnectionCredentials
-    {
-    }
-
-    // 定义PasswordConnectionCredentials类
-    public class PasswordConnectionCredentials(string password) : IConnectionCredentials
-    {
-        public string Password { get; } = password;
-    }
-
-    // 定义NoneConnectionCredentials类
-    public class NoneConnectionCredentials : IConnectionCredentials
-    {
-    }
-
-    // 定义SecurityType枚举
-    public static class SecurityType
-    {
-        public static readonly List<string> All = ["None", "VncAuth"];
-    }
-
-    // 定义EncodingType枚举
-    public static class EncodingType
-    {
-        public static readonly List<string> All = ["Raw", "CopyRect", "Zlib"];
-    }
-
-    // 定义VncClientOptions类
-    public class VncClientOptions
-    {
-        public List<string> SecurityTypes { get; set; } = [];
-        public List<string> EncodingTypes { get; set; } = [];
-    }
-
-    // 定义VncClient类
-    public class VncClient(VncClientOptions options)
-    {
-        public VncClientOptions Options { get; } = options;
-
-        public async Task<IVncConnection> ConnectAsync(IPEndPoint endPoint, IConnectionCredentials credentials)
-        {
-            // 这里只是一个简单的模拟实现
-            // 在实际应用中，应该使用真正的VNC客户端库
-            return await Task.FromResult(new MockVncConnection(endPoint.Address.ToString(), endPoint.Port));
-        }
-    }
-
-    // 模拟VNC连接实现
-    public class MockVncConnection(string host, int port) : IVncConnection
-    {
-        public string Host { get; set; } = host;
-        public int    Port { get; set; } = port;
-
-        public bool                     IsConnected { get; private set; } = true;
-        public event Action<Exception>? ConnectionError;
-        public event Action?            ConnectionClosed;
-
-        public Task DisconnectAsync()
-        {
-            IsConnected = false;
-            ConnectionClosed?.Invoke();
-            return Task.CompletedTask;
-        }
-
-        public Task SendKeyEventAsync(ushort keyCode, bool isPressed)
-        {
-            // 模拟发送键盘事件
-            return Task.CompletedTask;
-        }
-
-        public Task SendPointerEventAsync(int x, int y, MouseButton buttons)
-        {
-            // 模拟发送鼠标事件
-            return Task.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-            if (IsConnected) DisconnectAsync().Wait();
-        }
-    }
-
     // 实际的VNC服务类
-    public class VncService
+    public class VncService(IServiceProvider serviceProvider, ILogger<VncService> logger)
     {
-        private readonly Dictionary<string, VncSession> _activeSessions = new Dictionary<string, VncSession>();
+        private readonly Dictionary<string, VncSession> _activeSessions = new();
 
         public event Action<string, VncSession>? SessionCreated;
         public event Action<string>?             SessionClosed;
+        private IServiceProvider                 ServiceProvider { get; set; } = serviceProvider;
 
-
-        private VncConnectionWrapper? _rfbConnection;
-        private string?               _errorMessage;
-        private readonly ObservableAsPropertyHelper<bool> _parametersValidProperty;
-        public InteractiveAuthenticationHandler InteractiveAuthenticationHandler { get; }
-        public bool IsTightAvailable => DefaultImplementation.IsTightAvailable;
+        private InteractiveAuthenticationHandler InteractiveAuthenticationHandler => serviceProvider.GetRequiredService<InteractiveAuthenticationHandler>();
+        public  bool                             IsTightAvailable                 => DefaultImplementation.IsTightAvailable;
 
 
         public VncSession? GetSession(string sessionId)
@@ -130,20 +36,20 @@ namespace EasyPxeServer.Services
                 var sessionId = Guid.NewGuid().ToString();
 
                 // 创建VNC连接选项
-                var options = new VncClientOptions
-                {
-                    SecurityTypes = SecurityType.All,
-                    EncodingTypes = EncodingType.All
-                };
 
                 // 创建VNC客户端
-                var client = new VncClient(options);
-
-                // 创建连接凭证
-                IConnectionCredentials credentials = password != string.Empty ? new PasswordConnectionCredentials(password) : new NoneConnectionCredentials();
+                var client = new VncClient(ServiceProvider.GetRequiredService<ILoggerFactory>());
 
                 // 建立连接
-                var connection = await client.ConnectAsync(new IPEndPoint(IPAddress.Parse(host), port), credentials);
+                var connection = await client.ConnectAsync(new ConnectParameters
+                {
+                    TransportParameters = new TcpTransportParameters
+                    {
+                        Host = host,
+                        Port = port
+                    },
+                    AuthenticationHandler = InteractiveAuthenticationHandler
+                });
 
                 // 创建会话
                 var session = new VncSession
@@ -152,7 +58,7 @@ namespace EasyPxeServer.Services
                     Connection  = connection,
                     Host        = host,
                     Port        = port,
-                    IsConnected = true
+                    IsConnected = connection.ConnectionState is ConnectionState.Connected
                 };
 
                 // 存储会话
@@ -178,7 +84,7 @@ namespace EasyPxeServer.Services
                     if (session.Connection != null
                      && session.IsConnected)
                     {
-                        await session.Connection.DisconnectAsync();
+                        await session.Connection.CloseAsync();
                         session.IsConnected = false;
                     }
                 }
@@ -202,12 +108,13 @@ namespace EasyPxeServer.Services
             }).ToList();
         }
 
+        /*
         // 发送键盘事件到VNC服务器
         public async Task SendKeyEventAsync(string sessionId, ushort keyCode, bool isPressed)
         {
             if (_activeSessions.TryGetValue(sessionId, out var session)
              && session.Connection != null
-             && session.IsConnected) await session.Connection.SendKeyEventAsync(keyCode, isPressed);
+             && session.IsConnected) await session.Connection.SendMessageAsync<>(keyCode, isPressed);
         }
 
         // 发送鼠标事件到VNC服务器
@@ -216,17 +123,17 @@ namespace EasyPxeServer.Services
             if (_activeSessions.TryGetValue(sessionId, out var session)
              && session.Connection != null
              && session.IsConnected) await session.Connection.SendPointerEventAsync(x, y, buttons);
-        }
+        }*/
     }
 
     public class VncSession
     {
-        public string          SessionId   { get; set; } = string.Empty;
-        public IVncConnection? Connection  { get; set; }
-        public string          Host        { get; set; } = string.Empty;
-        public int             Port        { get; set; }
-        public bool            IsConnected { get; set; }
-        public DateTime        ConnectedAt { get; set; } = DateTime.Now;
+        public string         SessionId   { get; set; } = string.Empty;
+        public RfbConnection? Connection  { get; set; }
+        public string         Host        { get; set; } = string.Empty;
+        public int            Port        { get; set; }
+        public bool           IsConnected { get; set; }
+        public DateTime       ConnectedAt { get; set; } = DateTime.Now;
     }
 
     public class VncSessionInfo
