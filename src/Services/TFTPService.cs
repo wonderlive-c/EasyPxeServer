@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using Tftp.Net;
 
-namespace PxeBlazorServer.Services;
+namespace EasyPxeServer.Services;
 
 public class TFTPService : IHostedService
 {

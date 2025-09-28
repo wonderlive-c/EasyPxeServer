@@ -3,7 +3,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 
-namespace PxeBlazorServer.Services
+namespace EasyPxeServer.Services
 {
     public class PxeServerService(DHCPService dhcpService, TFTPService tftpService,ILogger<PxeServerService> logger) : IHostedService
     {

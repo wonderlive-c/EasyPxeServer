@@ -4,7 +4,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 
-namespace PxeBlazorServer.Services
+namespace EasyPxeServer.Services
 {
     // 在关键操作和分支处增加详细日志，便于调试
     public class DHCPService(ILogger<DHCPService> logger) : IHostedService

@@ -1,6 +1,6 @@
 ﻿#region Copyright
 // ===============================================================================
-//   Project Name        :    PxeBlazorServer
+//   Project Name        :    EasyPxeServer
 //   Project Description :
 //   ===============================================================================
 //   File Name           :    VncConnectionWrapper.cs
@@ -21,7 +21,7 @@
 using System.ComponentModel;
 using MarcusW.VncClient;
 
-namespace PxeBlazorServer.Services
+namespace EasyPxeServer.Services
 {
     /// <summary>
     /// Wrapper around RfbConnection that handles disposal more gracefully

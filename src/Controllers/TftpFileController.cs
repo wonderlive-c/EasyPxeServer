@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using PxeBlazorServer.Services;
+using EasyPxeServer.Services;
 using System.IO;
 using System.Net.Mime;
 using System.Threading.Tasks;
 
-namespace PxeBlazorServer.Controllers
+namespace EasyPxeServer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

@@ -2,7 +2,7 @@
 using MarcusW.VncClient.Protocol.Implementation;
 using ReactiveUI;
 
-namespace PxeBlazorServer.Services
+namespace EasyPxeServer.Services
 {
     // 定义IVncConnection接口，因为当前包版本中可能找不到这个接口
     public interface IVncConnection : IDisposable

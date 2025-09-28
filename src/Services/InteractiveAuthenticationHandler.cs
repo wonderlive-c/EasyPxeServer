@@ -1,7 +1,7 @@
 ﻿#region Copyright
 
 // ===============================================================================
-//   Project Name        :    PxeBlazorServer
+//   Project Name        :    EasyPxeServer
 //   Project Description :
 //   ===============================================================================
 //   File Name           :    InteractiveAuthenticationHandler.cs
@@ -26,7 +26,7 @@ using MarcusW.VncClient.Protocol.SecurityTypes;
 using MarcusW.VncClient.Security;
 using ReactiveUI;
 
-namespace PxeBlazorServer.Services
+namespace EasyPxeServer.Services
 {
     public class InteractiveAuthenticationHandler(ILogger<InteractiveAuthenticationHandler> logger) : IAuthenticationHandler
     {

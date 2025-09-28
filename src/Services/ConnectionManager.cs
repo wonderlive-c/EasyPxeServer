@@ -1,6 +1,6 @@
 ﻿#region Copyright
 // ===============================================================================
-//   Project Name        :    PxeBlazorServer
+//   Project Name        :    EasyPxeServer
 //   Project Description :
 //   ===============================================================================
 //   File Name           :    ConnectionManager.cs
@@ -22,7 +22,7 @@ using MarcusW.VncClient;
 using MarcusW.VncClient.Blazor.Adapters.Logging;
 using MarcusW.VncClient.Rendering;
 
-namespace PxeBlazorServer.Services
+namespace EasyPxeServer.Services
 {
     public class ConnectionManager
     {

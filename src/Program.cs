@@ -1,6 +1,6 @@
 ﻿using MarcusW.VncClient.Blazor.Extensions;
 using Microsoft.AspNetCore.Mvc;
-using PxeBlazorServer.Services;
+using EasyPxeServer.Services;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration().WriteTo.File("log.txt").WriteTo.Console().CreateBootstrapLogger();
