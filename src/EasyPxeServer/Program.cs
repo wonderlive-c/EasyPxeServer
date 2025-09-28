@@ -5,6 +5,7 @@ using Serilog;
 using System.Security.Principal;
 using System.Reflection;
 using System.IO;
+using Microsoft.Extensions.FileProviders;
 
 
 if (Environment.OSVersion.Platform is PlatformID.Win32Windows or PlatformID.Win32NT or PlatformID.Win32S or PlatformID.WinCE)
@@ -71,11 +72,22 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.Environment.EnvironmentName = "Development";
+// 不要硬编码环境名称，让ASP.NET Core根据实际环境自动确定
 
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+
+// 配置对node_modules目录的静态文件访问支持
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(app.Environment.ContentRootPath, "node_modules")),
+    RequestPath = "/node_modules"
+});
+
+// 配置WebSocket支持，允许所有请求路径使用WebSocket
+app.UseWebSockets();
 
 app.UseRouting();
 
