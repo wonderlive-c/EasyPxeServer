@@ -1,0 +1,124 @@
+﻿@page "/"
+@using PxeBlazorServer.Services
+@inject PxeServerService PxeServerService
+@inject VncService       VncService
+
+<PageTitle>PXE Server & VNC Console</PageTitle>
+
+<div class="container mt-4">
+    <h1 class="text-center mb-6">PXE Server & VNC Console</h1>
+
+    <div class="row justify-content-center">
+        <!-- PXE Server Card -->
+        <div class="col-md-5 mb-4">
+            <div class="card h-100 border-0 shadow-lg transition-all duration-300 hover:shadow-xl">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="text-center">PXE Server</h3>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-4 text-center">
+                        <span class="badge @(PxeServerService.IsRunning ? "bg-success" : "bg-danger") text-white p-2">
+                            @(PxeServerService.IsRunning ? "Running" : "Stopped")
+                        </span>
+                    </div>
+
+                    <div class="flex-grow-1">
+                        <p class="text-center mb-2">管理网络引导和部署服务</p>
+                        <ul class="list-unstyled">
+                            <li class="mb-1">• DHCP 服务</li>
+                            <li class="mb-1">• TFTP 文件传输</li>
+                            <li class="mb-1">• 网络引导配置</li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="/pxe" class="btn btn-primary w-100">
+                            <i class="fas fa-server mr-2"></i>管理PXE服务
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VNC Console Card -->
+        <div class="col-md-5 mb-4">
+            <div class="card h-100 border-0 shadow-lg transition-all duration-300 hover:shadow-xl">
+                <div class="card-header bg-info text-white">
+                    <h3 class="text-center">VNC Console</h3>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-4 text-center">
+                        <span class="badge bg-secondary text-white p-2">
+                            @(VncService.GetActiveSessions().Count) 活跃会话
+                        </span>
+                    </div>
+
+                    <div class="flex-grow-1">
+                        <p class="text-center mb-2">远程控制和管理计算机</p>
+                        <ul class="list-unstyled">
+                            <li class="mb-1">• 远程桌面访问</li>
+                            <li class="mb-1">• 键盘鼠标控制</li>
+                            <li class="mb-1">• 多会话管理</li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="/vnc" class="btn btn-info w-100">
+                            <i class="fas fa-desktop mr-2"></i>打开VNC控制台
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Overview -->
+    <div class="mt-8">
+        <h2 class="text-center mb-4">功能概述</h2>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow transition-all duration-300 hover:shadow-md">
+                    <div class="card-body text-center">
+                        <div class="bg-primary text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-network-wired text-2xl"></i>
+                        </div>
+                        <h4 class="card-title mb-2">网络引导</h4>
+                        <p class="card-text text-gray-600">通过网络启动计算机，无需本地存储设备，适用于大规模部署。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow transition-all duration-300 hover:shadow-md">
+                    <div class="card-body text-center">
+                        <div class="bg-info text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-file-export text-2xl"></i>
+                        </div>
+                        <h4 class="card-title mb-2">文件传输</h4>
+                        <p class="card-text text-gray-600">通过TFTP协议快速传输引导文件和系统镜像，支持断点续传。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow transition-all duration-300 hover:shadow-md">
+                    <div class="card-body text-center">
+                        <div class="bg-success text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-mouse-pointer text-2xl"></i>
+                        </div>
+                        <h4 class="card-title mb-2">远程控制</h4>
+                        <p class="card-text text-gray-600">通过VNC协议远程控制计算机，支持全键盘鼠标操作和屏幕共享。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    protected override void OnInitialized()
+    {
+        // 监听PXE服务器状态变化
+        PxeServerService.StatusChanged += delegate { InvokeAsync(StateHasChanged); };
+    }
+
+}

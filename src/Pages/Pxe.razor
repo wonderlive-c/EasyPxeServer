@@ -1,0 +1,316 @@
+﻿@page "/pxe"
+@using PxeBlazorServer.Services
+@inject PxeServerService PxeServerService
+@inject DHCPService      DhcpService
+@inject TFTPService      TftpService
+@inject IJSRuntime       jsRuntime
+
+<PageTitle>PXE服务器管理</PageTitle>
+
+<div class="container mt-4">
+    <h1 class="mb-4">PXE服务器管理</h1>
+
+    <!-- 服务器状态卡片 -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3>服务器状态</h3>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="mb-2">
+                        <span class="font-weight-bold">当前状态：</span>
+                        <span class="badge @(PxeServerService.IsRunning ? "bg-success" : "bg-danger") text-white">
+                            @(PxeServerService.IsRunning ? "运行中" : "已停止")
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-8 text-right">
+                    <button
+                        class="btn btn-primary mr-2"
+                        @onclick="StartServerAsync"
+                        disabled="@PxeServerService.IsRunning">
+                        启动服务器
+                    </button>
+                    <button
+                        class="btn btn-danger mr-2"
+                        @onclick="StopServerAsync"
+                        disabled="@(!PxeServerService.IsRunning)">
+                        停止服务器
+                    </button>
+                    <button
+                        class="btn btn-warning"
+                        @onclick="RestartServerAsync"
+                        disabled="@(!PxeServerService.IsRunning)">
+                        重启服务器
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 网络接口选择 -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h3>网络设置</h3>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <label class="form-label font-weight-bold">选择网络接口</label>
+                <select
+                    class="form-control"
+                    @bind="SelectedInterfaceIp"
+                    disabled="@PxeServerService.IsRunning">
+                    <option value="">-- 请选择网络接口 --</option>
+                    @foreach (var iface in NetworkInterfaces)
+                    {
+                        <option value="@iface.IPAddress">@iface.Name (@iface.IPAddress)</option>
+                    }
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="form-label font-weight-bold">DHCP 设置</label>
+                    <div class="mb-2">
+                        <label class="form-label">启动文件名</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            @bind="DhcpService.BootFileName"
+                            placeholder="pxeboot.0"
+                            disabled="@PxeServerService.IsRunning"/>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">下一跳服务器IP</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            @bind="DhcpService.NextServerIp"
+                            placeholder="TFTP服务器IP地址"
+                            disabled="@PxeServerService.IsRunning"/>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label font-weight-bold">TFTP 设置</label>
+                    <div class="mb-2">
+                        <label class="form-label">根目录</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            @bind="TftpService.RootDirectory"
+                            placeholder="tftpboot"
+                            disabled="@PxeServerService.IsRunning"/>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">状态</label>
+                        <span class="d-block mt-1 text-sm">
+                            TFTP服务器：@(TftpService.IsRunning ? "运行中" : "已停止")<br/>
+                            文件数量：@TftpFiles.Count
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TFTP文件管理 -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h3>TFTP文件管理</h3>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <button class="btn btn-primary" @onclick="ShowUploadModal">上传文件</button>
+                <button class="btn btn-info ml-2" @onclick="RefreshFileList">刷新列表</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>文件名</th>
+                        <th>大小</th>
+                        <th>修改日期</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @if (TftpFiles.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center">没有文件</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var file in TftpFiles)
+                        {
+                            <tr>
+                                <td>@file.Name</td>
+                                <td>@file.FormattedSize</td>
+                                <td>@file.LastModified.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td>
+                                    <button
+                                        class="btn btn-danger btn-sm"
+                                        @onclick="() => DeleteFile(file.Name)"
+                                        disabled="@PxeServerService.IsRunning">
+                                        删除
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上传文件模态框 -->
+    @if (ShowUploadModalFlag)
+    {
+        <div class="modal-overlay" @onclick="HideUploadModal">
+            <div class="modal-content" @onclick:stopPropagation>
+                <div class="modal-header">
+                    <h3>上传文件到TFTP目录</h3>
+                    <button class="close" @onclick="HideUploadModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    @*<input type="file" class="form-control" @onchange="HandleFileSelection"/>*@
+                    <input type="file" class="form-control"/>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="HideUploadModal">取消</button>
+                    <button
+                        class="btn btn-primary"
+                        @onclick="UploadFileAsync"
+                        disabled="@(SelectedFile != null || Uploading)">
+                        @(Uploading ? "上传中..." : "上传")
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<NetworkInterfaceInfo> NetworkInterfaces   { get; set; } = new List<NetworkInterfaceInfo>();
+    private List<TftpFileInfo>         TftpFiles           { get; set; } = new List<TftpFileInfo>();
+    private string                     SelectedInterfaceIp { get; set; } = string.Empty;
+    private bool                       ShowUploadModalFlag { get; set; } = false;
+    private IBrowserFile?              SelectedFile        { get; set; }
+    private bool                       Uploading           { get; set; } = false;
+
+    protected override void OnInitialized()
+    {
+        // 获取网络接口列表
+        NetworkInterfaces = PxeServerService.GetNetworkInterfaces();
+        // 获取TFTP文件列表
+        RefreshFileList();
+        // 监听状态变化
+        PxeServerService.StatusChanged += delegate { InvokeAsync(StateHasChanged); };
+    }
+
+    private async Task StartServerAsync()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(SelectedInterfaceIp))
+            {
+                await jsRuntime.InvokeVoidAsync("alert", "请先选择网络接口");
+                return;
+            }
+
+            // 设置服务的网络接口
+            DhcpService.SelectedInterfaceIp = SelectedInterfaceIp;
+            TftpService.SelectedInterfaceIp = SelectedInterfaceIp;
+
+            // 如果没有设置下一跳服务器IP，默认使用选定的接口IP
+            if (string.IsNullOrEmpty(DhcpService.NextServerIp)) { DhcpService.NextServerIp = SelectedInterfaceIp; }
+
+            await PxeServerService.StartAsync(default);
+            await jsRuntime.InvokeVoidAsync("alert", "PXE服务器已成功启动");
+        }
+        catch (Exception ex) { await jsRuntime.InvokeVoidAsync("alert", "启动服务器失败：" + ex.Message); }
+    }
+
+    private async Task StopServerAsync()
+    {
+        try
+        {
+            await PxeServerService.StopAsync(default);
+            await jsRuntime.InvokeVoidAsync("alert", "PXE服务器已成功停止");
+        }
+        catch (Exception ex) { await jsRuntime.InvokeVoidAsync("alert", "停止服务器失败：" + ex.Message); }
+    }
+
+    private async Task RestartServerAsync()
+    {
+        try
+        {
+            await PxeServerService.RestartAsync(default);
+            await jsRuntime.InvokeVoidAsync("alert", "PXE服务器已成功重启");
+        }
+        catch (Exception ex) { await jsRuntime.InvokeVoidAsync("alert", "重启服务器失败：" + ex.Message); }
+    }
+
+    private void RefreshFileList() { TftpFiles = TftpService.GetFiles(); }
+
+    private void ShowUploadModal()
+    {
+        ShowUploadModalFlag = true;
+        SelectedFile        = null;
+    }
+
+    private void HideUploadModal()
+    {
+        ShowUploadModalFlag = false;
+        SelectedFile        = null;
+    }
+
+    private void HandleFileSelection(InputFileChangeEventArgs e) { SelectedFile = e.File; }
+
+    private async Task UploadFileAsync()
+    {
+        if (SelectedFile == null)
+            return;
+
+        try
+        {
+            Uploading = true;
+            await using var stream  = SelectedFile.OpenReadStream(long.MaxValue);
+            var             success = await TftpService.UploadFileAsync(SelectedFile.Name, stream);
+            if (success)
+            {
+                await jsRuntime.InvokeVoidAsync("alert", "文件上传成功");
+                RefreshFileList();
+                HideUploadModal();
+            }
+            else { await jsRuntime.InvokeVoidAsync("alert", "文件上传失败"); }
+        }
+        catch (Exception ex) { await jsRuntime.InvokeVoidAsync("alert", "文件上传失败：" + ex.Message); }
+        finally { Uploading = false; }
+    }
+
+    private async Task DeleteFile(string fileName)
+    {
+        try
+        {
+            var confirmed = await jsRuntime.InvokeAsync<bool>("confirm", $"确定要删除文件 '{fileName}' 吗？");
+            if (confirmed)
+            {
+                var success = TftpService.DeleteFile(fileName);
+                if (success)
+                {
+                    RefreshFileList();
+                    await jsRuntime.InvokeVoidAsync("alert", "文件删除成功");
+                }
+                else { await jsRuntime.InvokeVoidAsync("alert", "文件删除失败"); }
+            }
+        }
+        catch (Exception ex) { await jsRuntime.InvokeVoidAsync("alert", "删除文件失败：" + ex.Message); }
+    }
+
+    public void Dispose() { PxeServerService.StatusChanged -= StateHasChanged; }
+}
