@@ -166,14 +166,11 @@ public class TFTPService : IHostedService
     // 获取TFTP目录结构（包括子目录和文件）
     public List<DirectoryItem> GetDirectoryStructure(string path = "")
     {
-        var result = new List<DirectoryItem>();
+        var    result = new List<DirectoryItem>();
         string fullPath;
 
         // 构建完整路径
-        if (string.IsNullOrEmpty(path))
-        {
-            fullPath = RootDirectory;
-        }
+        if (string.IsNullOrEmpty(path)) { fullPath = RootDirectory; }
         else
         {
             // 防止路径遍历攻击
@@ -182,6 +179,7 @@ public class TFTPService : IHostedService
                 logger.LogWarning("Attempted path traversal attack: {Path}", path);
                 return result;
             }
+
             fullPath = Path.Combine(RootDirectory, path);
         }
 
@@ -196,10 +194,10 @@ public class TFTPService : IHostedService
                 var relativePath = Path.GetRelativePath(RootDirectory, dirPath);
                 result.Add(new DirectoryItem
                 {
-                    Name = Path.GetFileName(dirPath),
-                    Path = relativePath,
-                    IsDirectory = true,
-                    Size = 0,
+                    Name         = Path.GetFileName(dirPath),
+                    Path         = relativePath,
+                    IsDirectory  = true,
+                    Size         = 0,
                     LastModified = Directory.GetLastWriteTime(dirPath)
                 });
             }
@@ -207,22 +205,19 @@ public class TFTPService : IHostedService
             // 添加文件
             foreach (var filePath in Directory.GetFiles(fullPath))
             {
-                var fileInfo = new FileInfo(filePath);
+                var fileInfo     = new FileInfo(filePath);
                 var relativePath = Path.GetRelativePath(RootDirectory, filePath);
                 result.Add(new DirectoryItem
                 {
-                    Name = Path.GetFileName(filePath),
-                    Path = relativePath,
-                    IsDirectory = false,
-                    Size = fileInfo.Length,
+                    Name         = Path.GetFileName(filePath),
+                    Path         = relativePath,
+                    IsDirectory  = false,
+                    Size         = fileInfo.Length,
                     LastModified = fileInfo.LastWriteTime
                 });
             }
         }
-        catch (Exception ex) 
-        {
-            logger.LogError(ex, "Error getting directory structure for path: {Path}, Message: {Message}", path, ex.Message); 
-        }
+        catch (Exception ex) { logger.LogError(ex, "Error getting directory structure for path: {Path}, Message: {Message}", path, ex.Message); }
 
         return result;
     }
@@ -296,10 +291,10 @@ public class TftpFileInfo
 // 目录项信息类
 public class DirectoryItem
 {
-    public string   Name { get; set; } = string.Empty;
-    public string   Path { get; set; } = string.Empty;
-    public bool     IsDirectory { get; set; }
-    public long     Size { get; set; }
+    public string   Name         { get; set; } = string.Empty;
+    public string   Path         { get; set; } = string.Empty;
+    public bool     IsDirectory  { get; set; }
+    public long     Size         { get; set; }
     public DateTime LastModified { get; set; }
 
     public string FormattedSize

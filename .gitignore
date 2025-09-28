@@ -362,3 +362,4 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /src/EasyPxeServer/log.txt
+/src/EasyPxeServer/tftpboot/ts/all
