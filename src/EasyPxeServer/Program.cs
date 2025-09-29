@@ -1,6 +1,4 @@
-﻿using MarcusW.VncClient.Blazor.Extensions;
-using Microsoft.AspNetCore.Mvc;
-using EasyPxeServer.Services;
+﻿using EasyPxeServer.Services;
 using Serilog;
 using System.Security.Principal;
 using System.Reflection;
@@ -46,21 +44,8 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddControllers();
 builder.Services.AddSingleton<DHCPService>();
 builder.Services.AddSingleton<TFTPService>();
-builder.Services.AddSingleton<VncService>();
 builder.Services.AddSingleton<PxeServerService>();
-// Add VNC client services
-builder.Services.AddVncClientServices(options =>
-{
-    //options.EnableDirtyRectangleRendering = true;
-    //options.MaxDirtyRectangles = 50;
-    //options.EnableFramebufferCaching = true;
-    //options.DefaultCanvasSize = new Size(800, 600);
-    //options.DefaultDpi = 96.0;
-});
 
-// Add application-specific services
-builder.Services.AddScoped<ConnectionManager>();
-builder.Services.AddSingleton<InteractiveAuthenticationHandler>();
 
 var app = builder.Build();
 
@@ -78,12 +63,13 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
-// 配置对node_modules目录的静态文件访问支持
+// 配置对node_modules目录的静态文件访问支持，用于加载官方noVNC库
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
         Path.Combine(app.Environment.ContentRootPath, "node_modules")),
-    RequestPath = "/node_modules"
+    RequestPath = "/node_modules",
+    ServeUnknownFileTypes = true // 确保能够加载所有文件类型
 });
 
 // 配置WebSocket支持，允许所有请求路径使用WebSocket

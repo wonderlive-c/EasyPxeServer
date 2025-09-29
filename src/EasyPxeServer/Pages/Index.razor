@@ -1,7 +1,6 @@
 ﻿@page "/"
 @using EasyPxeServer.Services
 @inject PxeServerService PxeServerService
-@inject VncService       VncService
 
 <PageTitle>PXE Server & VNC Console</PageTitle>
 
@@ -49,7 +48,7 @@
                 <div class="card-body d-flex flex-column">
                     <div class="mb-4 text-center">
                         <span class="badge bg-secondary text-white p-2">
-                            @(VncService.GetActiveSessions().Count) 活跃会话
+                            活跃会话
                         </span>
                     </div>
 
