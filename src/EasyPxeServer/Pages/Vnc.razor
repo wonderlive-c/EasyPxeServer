@@ -1,0 +1,340 @@
+﻿@page "/vnc"
+@using EasyPxeServer.Services
+@inject VncService        VncService
+@inject IJSRuntime        JSRuntime
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+
+<PageTitle>VNC 控制台</PageTitle>
+
+@* 直接嵌入JavaScript代码，确保openVncClientWindow函数始终可用 *@
+<script>
+    // 直接在页面中定义openVncClientWindow函数
+    window.openVncClientWindow = function(connectionId, host, port, width, height, baseUrl) {
+        try {
+            // 计算窗口位置，使其居中显示
+            const screenWidth = window.screen.width;
+            const screenHeight = window.screen.height;
+            
+            // 确保窗口尺寸合理
+            width = Math.min(width || 1280, screenWidth - 100);
+            height = Math.min(height || 720, screenHeight - 100);
+            
+            const left = (screenWidth - width) / 2;
+            const top = (screenHeight - height) / 2;
+            
+            // 构建查询参数
+            const queryParams = new URLSearchParams({
+                connectionId: connectionId,
+                host: host,
+                port: port,
+                width: width,
+                height: height
+            });
+            
+            // 构建窗口URL
+            const url = baseUrl + 'vnc-client?' + queryParams.toString();
+            
+            // 设置窗口特性
+            const windowFeatures = `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes,status=no,toolbar=no,menubar=no,location=no`;
+            
+            // 打开新窗口
+            const vncWindow = window.open(url, `VNC_${connectionId}`, windowFeatures);
+            
+            if (vncWindow) {
+                console.log('VNC client window opened successfully');
+                
+                // 监听窗口关闭事件
+                const checkClosed = setInterval(() => {
+                    if (vncWindow.closed) {
+                        clearInterval(checkClosed);
+                        console.log('VNC client window closed');
+                    }
+                }, 500);
+                
+                // 聚焦到新窗口
+                vncWindow.focus();
+                return true;
+            } else {
+                console.error('Failed to open VNC client window (popup blocked)');
+                alert('无法打开VNC客户端窗口，可能是因为浏览器阻止了弹出窗口。请允许弹出窗口后重试。');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error opening VNC client window:', error);
+            alert(`打开VNC客户端窗口时出错: ${error.message}`);
+            return false;
+        }
+    };
+</script>
+
+<div class="container mt-4">
+    <h1 class="text-center mb-6">VNC 控制台</h1>
+
+    <!-- 连接参数表单 -->
+    <div class="card border-0 shadow-lg mb-6">
+        <div class="card-header bg-info text-white">
+            <h3 class="text-center">连接参数</h3>
+        </div>
+        <div class="card-body">
+            <form @onsubmit="ConnectToVncServer">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="host" class="form-label">主机地址 *</label>
+                        <input type="text" id="host" class="form-control" @bind="Host" placeholder="例如: 192.168.1.100" required/>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="port" class="form-label">端口号 *</label>
+                        <input type="number" id="port" class="form-control" @bind="Port" min="1" max="65535" required/>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="password" class="form-label">密码（可选）</label>
+                        <input type="password" id="password" class="form-control" @bind="Password" placeholder="输入VNC密码"/>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="path" class="form-label">WebSocket路径</label>
+                        <input type="text" id="path" class="form-control" @bind="WebSocketPath" placeholder="WebSocket代理路径"/>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="connectionName" class="form-label">连接名称（可选）</label>
+                        <input type="text" id="connectionName" class="form-control" @bind="ConnectionName" placeholder="为连接命名"/>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="screenSize" class="form-label">屏幕大小</label>
+                        <select id="screenSize" class="form-control" @bind="ScreenSize">
+                            <option value="800x600">800 x 600</option>
+                            <option value="1024x768">1024 x 768</option>
+                            <option value="1280x800">1280 x 800</option>
+                            <option value="1366x768">1366 x 768</option>
+                            <option value="1920x1080">1920 x 1080</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+                </div>
+
+                @if (ScreenSize == "custom")
+                {
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="customWidth" class="form-label">自定义宽度</label>
+                            <input type="number" id="customWidth" class="form-control" @bind="CustomWidth" min="320" max="4096"/>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="customHeight" class="form-label">自定义高度</label>
+                            <input type="number" id="customHeight" class="form-control" @bind="CustomHeight" min="240" max="2160"/>
+                        </div>
+                    </div>
+                }
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg px-6">
+                        <i class="fas fa-plug mr-2"></i>连接VNC服务器
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 活跃连接列表 -->
+    @if (ActiveConnections.Any())
+    {
+        <div class="card border-0 shadow-lg mb-6">
+            <div class="card-header bg-primary text-white">
+                <h3 class="text-center">活跃连接</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>连接名称</th>
+                            <th>主机</th>
+                            <th>端口</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var connection in ActiveConnections)
+                        {
+                            <tr>
+                                <td>@(string.IsNullOrEmpty(connection.ConnectionId) ? "未命名连接" : connection.ConnectionId)</td>
+                                <td>@connection.Host</td>
+                                <td>@connection.Port</td>
+                                <td>
+                                    <button class="btn btn-info btn-sm" @onclick="() => ReconnectConnection(connection.ConnectionId)">
+                                        <i class="fas fa-redo-alt mr-1"></i>重新连接
+                                    </button>
+                                    <button class="btn btn-danger btn-sm ml-2" @onclick="() => DisconnectConnection(connection.ConnectionId)">
+                                        <i class="fas fa-times mr-1"></i>断开连接
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- 快速连接预设 -->
+    <div class="card border-0 shadow-lg">
+        <div class="card-header bg-secondary text-white">
+            <h3 class="text-center">快速连接</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                @foreach (var preset in ConnectionPresets)
+                {
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 border-info hover:shadow-md transition-shadow duration-300">
+                            <div class="card-body">
+                                <h5 class="card-title">@preset.Name</h5>
+                                <p class="card-text">@preset.Host:@preset.Port</p>
+                                <button class="btn btn-primary btn-block" @onclick="() => QuickConnect(preset)">
+                                    <i class="fas fa-plug mr-1"></i>快速连接
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    // 连接参数
+    private string Host           { get; set; } = "10.10.10.10";
+    private int    Port           { get; set; } = 5901;
+    private string Password       { get; set; } = string.Empty;
+    private string WebSocketPath  { get; set; } = "websockify";
+    private string ConnectionName { get; set; } = string.Empty;
+    private string ScreenSize     { get; set; } = "1280x800";
+    private int    CustomWidth    { get; set; } = 1280;
+    private int    CustomHeight   { get; set; } = 720;
+
+    // 活跃连接列表
+    private List<VncConnection> ActiveConnections { get; set; } = [];
+
+    // 连接预设
+    private List<ConnectionPreset> ConnectionPresets { get; set; } =
+    [
+        new ConnectionPreset { Name = "本地测试", Host  = "localhost", Port   = 8080 },
+        new ConnectionPreset { Name = "开发服务器", Host = "10.10.10.10", Port = 5901 }
+    ];
+
+    protected override void OnInitialized()
+    {
+        // 初始化时加载活跃连接
+        UpdateActiveConnections();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        // 不需要清理JS模块引用
+        return ValueTask.CompletedTask;
+    }
+
+    private void UpdateActiveConnections() { ActiveConnections = VncService.GetActiveConnections(); }
+
+    private async Task ConnectToVncServer(EventArgs e)
+    {
+        // 验证输入
+        if (string.IsNullOrWhiteSpace(Host)
+         || Port <= 0
+         || Port > 65535)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "请输入有效的主机地址和端口号");
+            return;
+        }
+
+        // 创建连接ID
+        var connectionId = string.IsNullOrEmpty(ConnectionName) ? $"{Host}:{Port}" : ConnectionName;
+
+        try
+        {
+            // 创建VNC连接
+            // 协议（http 或 https）
+            var uri    = new Uri(NavigationManager.BaseUri);
+            var scheme = uri.Scheme; // 结果："http" 或 "https"
+
+            // 主机名（不含端口，如 "example.com"）
+            var host = uri.Host; // 结果："localhost" 或 "www.example.com"
+
+            // 端口号（如果有，否则为 null）
+            var port = uri.Port; // 结果：如 5000、8080，默认端口（80/443）可能为 null
+
+            var connection = await VncService.CreateConnection(connectionId, scheme is "http" ? "ws" : "wss", host, port, Host, Port, Password, WebSocketPath);
+
+            // 解析屏幕尺寸
+            var width  = CustomWidth;
+            var height = CustomHeight;
+
+            if (ScreenSize != "custom")
+            {
+                var dimensions = ScreenSize.Split('x');
+                if (dimensions.Length == 2)
+                {
+                    int.TryParse(dimensions[0], out width);
+                    int.TryParse(dimensions[1], out height);
+                }
+            }
+
+            // 打开新窗口 - 直接调用已在页面中定义的函数
+            await JSRuntime.InvokeVoidAsync("openVncClientWindow", connectionId, Host, Port, width, height, NavigationManager.BaseUri);
+
+            // 更新活跃连接列表
+            UpdateActiveConnections();
+        }
+        catch (Exception ex) { await JSRuntime.InvokeVoidAsync("alert", $"连接失败: {ex.Message}"); }
+    }
+
+    private async Task ReconnectConnection(string connectionId)
+    {
+        var connection = ActiveConnections.FirstOrDefault(c => c.ConnectionId == connectionId);
+        if (connection != null)
+        {
+            // 使用相同的参数重新连接
+            Host           = connection.Host;
+            Port           = connection.Port;
+            ConnectionName = connection.ConnectionId;
+            await ConnectToVncServer(null);
+        }
+    }
+
+    private async Task DisconnectConnection(string connectionId)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("disconnectNoVNC", connectionId);
+            await VncService.Disconnect(connectionId);
+            UpdateActiveConnections();
+        }
+        catch (Exception ex) { await JSRuntime.InvokeVoidAsync("alert", $"断开连接失败: {ex.Message}"); }
+    }
+
+    private void QuickConnect(ConnectionPreset preset)
+    {
+        Host           = preset.Host;
+        Port           = preset.Port;
+        ConnectionName = preset.Name;
+    }
+
+
+    // 连接预设类
+    public class ConnectionPreset
+    {
+        public string Name { get; set; }
+        public string Host { get; set; }
+        public int    Port { get; set; }
+    }
+
+}

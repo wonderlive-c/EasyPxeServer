@@ -11,17 +11,10 @@ namespace EasyPxeServer.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class WebSocketProxyController : ControllerBase
+    public class WebSocketProxyController(ILogger<WebSocketProxyController> logger) : ControllerBase
     {
-        private readonly ILogger<WebSocketProxyController> _logger;
-
-        public WebSocketProxyController(ILogger<WebSocketProxyController> logger)
-        {
-            _logger = logger;
-        }
-
         [HttpGet("/websockify")]
-        public async Task Get([FromQuery] string host, [FromQuery] int port)
+        public async Task Get([FromQuery] string host="10.10.10.10", [FromQuery] int port=5901)
         {
             if (!HttpContext.WebSockets.IsWebSocketRequest)
             {
@@ -30,7 +23,9 @@ namespace EasyPxeServer.Controllers
                 return;
             }
 
-            if (string.IsNullOrEmpty(host) || port <= 0 || port > 65535)
+            if (string.IsNullOrEmpty(host)
+             || port <= 0
+             || port > 65535)
             {
                 HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
                 await HttpContext.Response.WriteAsync("Invalid host or port parameter.");
@@ -39,36 +34,36 @@ namespace EasyPxeServer.Controllers
 
             try
             {
-                _logger.LogInformation("WebSocket proxy request for {Host}:{Port}", host, port);
-                
+                logger.LogInformation("WebSocket proxy request for {Host}:{Port}", host, port);
+
                 // 接受WebSocket连接
                 using var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                
+
                 // 连接到目标VNC服务器
                 using var tcpClient = new TcpClient();
                 await tcpClient.ConnectAsync(host, port);
-                using var networkStream = tcpClient.GetStream();
-                
-                _logger.LogInformation("Connected to VNC server {Host}:{Port}", host, port);
-                
+                await using var networkStream = tcpClient.GetStream();
+
+                logger.LogInformation("Connected to VNC server {Host}:{Port}", host, port);
+
                 // 双向转发数据
                 var webSocketTask = ForwardFromWebSocketToTcp(webSocket, networkStream);
-                var tcpTask = ForwardFromTcpToWebSocket(tcpClient, networkStream, webSocket);
-                
+                var tcpTask       = ForwardFromTcpToWebSocket(tcpClient, networkStream, webSocket);
+
                 // 等待任一连接关闭
                 await Task.WhenAny(webSocketTask, tcpTask);
-                
-                _logger.LogInformation("Proxy connection closed for {Host}:{Port}", host, port);
+
+                logger.LogInformation("Proxy connection closed for {Host}:{Port}", host, port);
             }
             catch (SocketException ex)
             {
-                _logger.LogError(ex, "Failed to connect to VNC server {Host}:{Port}", host, port);
+                logger.LogError(ex, "Failed to connect to VNC server {Host}:{Port}", host, port);
                 HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 await HttpContext.Response.WriteAsync($"Failed to connect to VNC server: {ex.Message}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in WebSocket proxy");
+                logger.LogError(ex, "Error in WebSocket proxy");
                 HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 await HttpContext.Response.WriteAsync($"Proxy error: {ex.Message}");
             }
@@ -80,13 +75,13 @@ namespace EasyPxeServer.Controllers
             while (webSocket.State == WebSocketState.Open)
             {
                 var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                
+
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
                     await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
                     break;
                 }
-                
+
                 if (result.Count > 0)
                 {
                     // 直接转发二进制数据到TCP流，不做任何转换
@@ -102,11 +97,12 @@ namespace EasyPxeServer.Controllers
             try
             {
                 // 使用带超时的读取，确保不会错过数据且CPU占用合理
-                while (tcpClient.Connected && webSocket.State == WebSocketState.Open)
+                while (tcpClient.Connected
+                    && webSocket.State == WebSocketState.Open)
                 {
                     // 设置读取超时，避免无限阻塞
                     networkStream.ReadTimeout = 500; // 500毫秒
-                    
+
                     try
                     {
                         // 尝试读取数据，这是一个阻塞操作但有超时
@@ -127,12 +123,9 @@ namespace EasyPxeServer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in ForwardFromTcpToWebSocket");
+                logger.LogError(ex, "Error in ForwardFromTcpToWebSocket");
                 // 出错时断开连接
-                if (webSocket.State == WebSocketState.Open)
-                {
-                    await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError, "Proxy error", CancellationToken.None);
-                }
+                if (webSocket.State == WebSocketState.Open) { await webSocket.CloseAsync(WebSocketCloseStatus.InternalServerError, "Proxy error", CancellationToken.None); }
             }
         }
     }

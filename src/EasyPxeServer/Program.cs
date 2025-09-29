@@ -45,6 +45,7 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton<DHCPService>();
 builder.Services.AddSingleton<TFTPService>();
 builder.Services.AddSingleton<PxeServerService>();
+builder.Services.AddSingleton<VncService>();
 
 
 var app = builder.Build();
@@ -62,15 +63,6 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
-
-// 配置对node_modules目录的静态文件访问支持，用于加载官方noVNC库
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(app.Environment.ContentRootPath, "node_modules")),
-    RequestPath = "/node_modules",
-    ServeUnknownFileTypes = true // 确保能够加载所有文件类型
-});
 
 // 配置WebSocket支持，允许所有请求路径使用WebSocket
 app.UseWebSockets();

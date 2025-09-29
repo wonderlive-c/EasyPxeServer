@@ -1,0 +1,1 @@
+export { default as RFB } from './core/rfb';

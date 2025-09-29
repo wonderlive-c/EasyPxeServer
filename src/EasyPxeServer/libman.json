@@ -1,11 +1,11 @@
-{
+﻿{
   "version": "3.0",
   "defaultProvider": "cdnjs",
   "libraries": [
     {
       "provider": "jsdelivr",
-      "library": "@novnc/novnc@1.6.0",
-      "destination": "wwwroot/novnc/novnc/"
+      "library": "@flexem/novnc@1.1.6",
+      "destination": "wwwroot/flexem/novnc/"
     }
   ]
 }

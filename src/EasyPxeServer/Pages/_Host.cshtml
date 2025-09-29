@@ -15,7 +15,7 @@
     <link href="EasyPxeServer.styles.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <!-- noVNC相关样式 -->
-    <link href="novnc/vnc.css" rel="stylesheet" />
+    <!-- CSS将由novnc-helper.js动态加载 -->
     <link rel="icon" type="image/png" href="favicon.png"/>
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
 </head>
@@ -34,8 +34,5 @@
     </div>
 
     <script src="_framework/blazor.server.js"></script>
-    <!-- noVNC相关脚本 -->
-    <script src="js/novnc-helper.js"></script>
-    <script src="novnc/vnc.js"></script>
 </body>
 </html>
