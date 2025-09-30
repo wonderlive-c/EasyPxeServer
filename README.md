@@ -1,4 +1,4 @@
-# EasyPxeServer
+﻿# EasyPxeServer
 
 EasyPxeServer 是一个基于 .NET Core 和 Blazor Server 的 PXE 服务器管理系统，提供了 DHCP、TFTP 服务以及 VNC 远程控制功能，帮助用户轻松管理网络启动和远程服务器操作。
 
@@ -37,7 +37,7 @@ EasyPxeServer 是一个基于 .NET Core 和 Blazor Server 的 PXE 服务器管�
 - **前端框架**：Blazor Server
 - **DHCP 服务库**：DotNetProjects.DhcpServer (v2.0.26)
 - **TFTP 服务库**：Tftp.Net (v1.3.0)
-- **VNC 客户端**：Community.MarcusW.VncClient.Blazor (v2.0.0-alpha5)
+- **VNC 客户端**：@flexem/novnc@1.1.6
 - **日志系统**：Serilog
 
 ## 特别感谢
@@ -46,7 +46,7 @@ EasyPxeServer 是一个基于 .NET Core 和 Blazor Server 的 PXE 服务器管�
 
 - **Tftp.Net**：提供了完整的 TFTP 协议实现，支持读取、写入和列出等操作。
 - **DotNetProjects.DhcpServer**：提供了 DHCP 服务器功能，支持 IP 地址分配和 PXE 启动选项设置。
-- **Community.MarcusW.VncClient**：提供了 VNC 客户端功能，支持通过 Web 界面远程控制服务器。
+- **@flexem/novnc@1.1.6**：提供了 VNC 客户端功能，支持通过 Web 界面远程控制服务器。
 
 这些库可以在 [NuGet](https://www.nuget.org/) 上找到，您也可以通过搜索它们的名称在 GitHub 上找到相应的开源仓库。
 

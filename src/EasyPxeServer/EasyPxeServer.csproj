@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DiscUtils.Iso9660" Version="0.16.13" />
     <PackageReference Include="DotNetProjects.DhcpServer" Version="2.0.26" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
@@ -45,6 +46,10 @@
 
   <ItemGroup>
     <Folder Include="Components\" />
+    <Folder Include="Entities\DhcpUser\" />
+    <Folder Include="Entities\VncClient\" />
+    <Folder Include="Entities\BootFile\" />
+    <Folder Include="Entities\KickStart\" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties libman_1json__JsonSchema="https://www.schemastore.org/jekyll.json" /></VisualStudio></ProjectExtensions>

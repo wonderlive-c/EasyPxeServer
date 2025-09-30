@@ -37,7 +37,6 @@ Log.Logger = new LoggerConfiguration().WriteTo.File("log.txt").WriteTo.Console()
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile(@"appsettings.log.json");
-builder.Logging.AddSerilog();
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();

@@ -177,15 +177,15 @@
                     <button class="close" @onclick="HideUploadModal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    @*<input type="file" class="form-control" @onchange="HandleFileSelection"/>*@
-                    <input type="file" class="form-control"/>
+                    <InputFile class="form-control" OnChange="HandleFileSelection"/>
+
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" @onclick="HideUploadModal">取消</button>
                     <button
                         class="btn btn-primary"
                         @onclick="UploadFileAsync"
-                        disabled="@(SelectedFile != null || Uploading)">
+                        disabled="@(SelectedFile == null || Uploading)">
                         @(Uploading ? "上传中..." : "上传")
                     </button>
                 </div>
@@ -195,8 +195,13 @@
 </div>
 
 @code {
-    private List<NetworkInterfaceInfo> NetworkInterfaces   { get; set; } = new List<NetworkInterfaceInfo>();
-    private List<TftpFileInfo>         TftpFiles           { get; set; } = new List<TftpFileInfo>();
+    private async Task ShowToast(string message, string type = "success")
+    {
+        await jsRuntime.InvokeVoidAsync("showToast", message, type, 3000);
+    }
+    
+    private List<NetworkInterfaceInfo> NetworkInterfaces   { get; set; } = [];
+    private List<TftpFileInfo>         TftpFiles           { get; set; } = [];
     private string                     SelectedInterfaceIp { get; set; } = string.Empty;
     private bool                       ShowUploadModalFlag { get; set; } = false;
     private IBrowserFile?              SelectedFile        { get; set; }
@@ -230,9 +235,9 @@
             if (string.IsNullOrEmpty(DhcpService.NextServerIp)) { DhcpService.NextServerIp = SelectedInterfaceIp; }
 
             await PxeServerService.StartAsync(default);
-            await jsRuntime.InvokeVoidAsync("alert", "PXE服务器已成功启动");
+            await ShowToast("PXE服务器已成功启动");
         }
-        catch (Exception ex) { await jsRuntime.InvokeVoidAsync("alert", "启动服务器失败：" + ex.Message); }
+        catch (Exception ex) { await ShowToast("启动服务器失败：" + ex.Message, "error"); }
     }
 
     private async Task StopServerAsync()
@@ -240,9 +245,9 @@
         try
         {
             await PxeServerService.StopAsync(default);
-            await jsRuntime.InvokeVoidAsync("alert", "PXE服务器已成功停止");
+            await ShowToast("PXE服务器已成功停止");
         }
-        catch (Exception ex) { await jsRuntime.InvokeVoidAsync("alert", "停止服务器失败：" + ex.Message); }
+        catch (Exception ex) { await ShowToast("停止服务器失败：" + ex.Message, "error"); }
     }
 
     private async Task RestartServerAsync()
@@ -250,9 +255,9 @@
         try
         {
             await PxeServerService.RestartAsync(default);
-            await jsRuntime.InvokeVoidAsync("alert", "PXE服务器已成功重启");
+            await ShowToast("PXE服务器已成功重启");
         }
-        catch (Exception ex) { await jsRuntime.InvokeVoidAsync("alert", "重启服务器失败：" + ex.Message); }
+        catch (Exception ex) { await ShowToast("重启服务器失败：" + ex.Message, "error"); }
     }
 
     private void RefreshFileList() { TftpFiles = TftpService.GetFiles(); }
@@ -283,13 +288,13 @@
             var             success = await TftpService.UploadFileAsync(SelectedFile.Name, stream);
             if (success)
             {
-                await jsRuntime.InvokeVoidAsync("alert", "文件上传成功");
+                await ShowToast("文件上传成功");
                 RefreshFileList();
                 HideUploadModal();
             }
-            else { await jsRuntime.InvokeVoidAsync("alert", "文件上传失败"); }
+            else { await ShowToast("文件上传失败", "error"); }
         }
-        catch (Exception ex) { await jsRuntime.InvokeVoidAsync("alert", "文件上传失败：" + ex.Message); }
+        catch (Exception ex) { await ShowToast("文件上传失败：" + ex.Message, "error"); }
         finally { Uploading = false; }
     }
 
@@ -304,12 +309,12 @@
                 if (success)
                 {
                     RefreshFileList();
-                    await jsRuntime.InvokeVoidAsync("alert", "文件删除成功");
+                    await ShowToast("文件删除成功");
                 }
-                else { await jsRuntime.InvokeVoidAsync("alert", "文件删除失败"); }
+                else { await ShowToast("文件删除失败", "error"); }
             }
         }
-        catch (Exception ex) { await jsRuntime.InvokeVoidAsync("alert", "删除文件失败：" + ex.Message); }
+        catch (Exception ex) { await ShowToast("删除文件失败：" + ex.Message, "error"); }
     }
 
     public void Dispose() { PxeServerService.StatusChanged -= StateHasChanged; }

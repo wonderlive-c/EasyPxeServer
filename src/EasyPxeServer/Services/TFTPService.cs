@@ -91,7 +91,7 @@ public class TFTPService : IHostedService
                         taskCompletionSource.TrySetResult(true);
                     };
 
-                    await Task.WhenAny(taskCompletionSource.Task, Task.Delay(TimeSpan.FromHours(10)));
+                    await Task.WhenAny(taskCompletionSource.Task, Task.Delay(TimeSpan.FromMinutes(10)));
                 }
                 catch (Exception e) { logger.LogError(e, "Error sending file: {Message}", e.Message); }
             }

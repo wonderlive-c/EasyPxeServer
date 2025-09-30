@@ -163,14 +163,14 @@
                         @foreach (var connection in ActiveConnections)
                         {
                             <tr>
-                                <td>@(string.IsNullOrEmpty(connection.ConnectionId) ? "未命名连接" : connection.ConnectionId)</td>
+                                <td>@(string.IsNullOrEmpty(connection.ConnectionName) ? "未命名连接" : connection.ConnectionName)</td>
                                 <td>@connection.Host</td>
                                 <td>@connection.Port</td>
                                 <td>
                                     <button class="btn btn-info btn-sm" @onclick="() => ReconnectConnection(connection.ConnectionId)">
                                         <i class="fas fa-redo-alt mr-1"></i>重新连接
                                     </button>
-                                    <button class="btn btn-danger btn-sm ml-2" @onclick="() => DisconnectConnection(connection.ConnectionId)">
+                                    <button class="btn btn-danger btn-sm ml-2" @onclick="() => RemoveConnection(connection.ConnectionId)">
                                         <i class="fas fa-times mr-1"></i>断开连接
                                     </button>
                                 </td>
@@ -245,7 +245,12 @@
 
     private void UpdateActiveConnections() { ActiveConnections = VncService.GetActiveConnections(); }
 
-    private async Task ConnectToVncServer(EventArgs e)
+    private async Task ConnectToVncServer()
+    {
+        await ConnectToVncServer(Guid.NewGuid().ToString());
+    }
+
+    private async Task ConnectToVncServer(string? connectionId)
     {
         // 验证输入
         if (string.IsNullOrWhiteSpace(Host)
@@ -257,22 +262,16 @@
         }
 
         // 创建连接ID
-        var connectionId = string.IsNullOrEmpty(ConnectionName) ? $"{Host}:{Port}" : ConnectionName;
+        connectionId ??= Guid.NewGuid().ToString();
 
         try
         {
             // 创建VNC连接
-            // 协议（http 或 https）
             var uri    = new Uri(NavigationManager.BaseUri);
             var scheme = uri.Scheme; // 结果："http" 或 "https"
-
-            // 主机名（不含端口，如 "example.com"）
             var host = uri.Host; // 结果："localhost" 或 "www.example.com"
-
-            // 端口号（如果有，否则为 null）
             var port = uri.Port; // 结果：如 5000、8080，默认端口（80/443）可能为 null
-
-            var connection = await VncService.CreateConnection(connectionId, scheme is "http" ? "ws" : "wss", host, port, Host, Port, Password, WebSocketPath);
+            await VncService.CreateConnection(connectionId, scheme is "http" ? "ws" : "wss", host, port, Host, Port, Password, WebSocketPath);
 
             // 解析屏幕尺寸
             var width  = CustomWidth;
@@ -305,17 +304,16 @@
             // 使用相同的参数重新连接
             Host           = connection.Host;
             Port           = connection.Port;
-            ConnectionName = connection.ConnectionId;
-            await ConnectToVncServer(null);
+            ConnectionName = connection.ConnectionName;
+            await ConnectToVncServer(connectionId);
         }
     }
 
-    private async Task DisconnectConnection(string connectionId)
+    private async Task RemoveConnection(string connectionId)
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("disconnectNoVNC", connectionId);
-            await VncService.Disconnect(connectionId);
+            await VncService.RemoveConnection(connectionId);
             UpdateActiveConnections();
         }
         catch (Exception ex) { await JSRuntime.InvokeVoidAsync("alert", $"断开连接失败: {ex.Message}"); }
