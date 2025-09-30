@@ -1,36 +1,22 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">PXE服务器</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
+﻿@using Microsoft.FluentUI.AspNetCore.Components
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
-                <span class="fas fa-home" aria-hidden="true"></span> 首页
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/pxe">
-                <span class="fas fa-server" aria-hidden="true"></span> PXE服务器
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/vnc">
-                <span class="fas fa-desktop" aria-hidden="true"></span> VNC控制台
-            </NavLink>
-        </div>
-    </nav>
-</div>
-
-@code {
-    private bool collapseNavMenu = true;
-
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu() { collapseNavMenu = !collapseNavMenu; }
-}
+<FluentStack Orientation="Orientation.Vertical">
+    <FluentStack Orientation="Orientation.Horizontal">
+        <FluentIcon Value="@(new Icons.Filled.Size24.Server())" Size="24" />
+        <FluentText Variant="TextVariants.Title2" Class="ml-2">PXE服务器</FluentText>
+    </FluentStack>
+    
+    <FluentDivider />
+    
+    <FluentNavigation>
+        <FluentNavLink Icon="@(new Icons.Filled.Size24.Home())" Href="/" Match="NavLinkMatch.All">
+            首页
+        </FluentNavLink>
+        <FluentNavLink Icon="@(new Icons.Filled.Size24.Server())" Href="/pxe">
+            PXE服务器
+        </FluentNavLink>
+        <FluentNavLink Icon="@(new Icons.Filled.Size24.Desktop())" Href="/vnc">
+            VNC控制台
+        </FluentNavLink>
+    </FluentNavigation>
+</FluentStack>

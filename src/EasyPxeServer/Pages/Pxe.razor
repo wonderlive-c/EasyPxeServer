@@ -4,204 +4,185 @@
 @inject DHCPService      DhcpService
 @inject TFTPService      TftpService
 @inject IJSRuntime       jsRuntime
+@using Microsoft.FluentUI.AspNetCore.Components
+
 
 <PageTitle>PXE服务器管理</PageTitle>
 
-<div class="container mt-4">
-    <h1 class="mb-4">PXE服务器管理</h1>
-
-    <!-- 服务器状态卡片 -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h3>服务器状态</h3>
-        </div>
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-4">
-                    <div class="mb-2">
-                        <span class="font-weight-bold">当前状态：</span>
-                        <span class="badge @(PxeServerService.IsRunning ? "bg-success" : "bg-danger") text-white">
-                            @(PxeServerService.IsRunning ? "运行中" : "已停止")
-                        </span>
-                    </div>
-                </div>
-                <div class="col-md-8 text-right">
-                    <button
-                        class="btn btn-primary mr-2"
-                        @onclick="StartServerAsync"
-                        disabled="@PxeServerService.IsRunning">
+<FluentCard>
+    <FluentCardHeader>
+        <FluentText Variant="TextVariants.Title3">服务器状态</FluentText>
+    </FluentCardHeader>
+    <FluentCardBody>
+        <FluentGrid>
+            <FluentGridItem Size="4">
+                <FluentStack Orientation="Orientation.Horizontal">
+                    <FluentText>当前状态：</FluentText>
+                    <FluentBadge Appearance="@(PxeServerService.IsRunning ? Appearance.Accent : Appearance.Neutral)">
+                        @(PxeServerService.IsRunning ? "运行中" : "已停止")
+                    </FluentBadge>
+                </FluentStack>
+            </FluentGridItem>
+            <FluentGridItem Size="8" HorizontalAlignment="HorizontalAlignment.Right">
+                <FluentButtonGroup>
+                    <FluentButton Appearance="Appearance.Accent"
+                                  @onclick="StartServerAsync"
+                                  disabled="@PxeServerService.IsRunning">
                         启动服务器
-                    </button>
-                    <button
-                        class="btn btn-danger mr-2"
-                        @onclick="StopServerAsync"
-                        disabled="@(!PxeServerService.IsRunning)">
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral"
+                                  @onclick="StopServerAsync"
+                                  disabled="@(!PxeServerService.IsRunning)">
                         停止服务器
-                    </button>
-                    <button
-                        class="btn btn-warning"
-                        @onclick="RestartServerAsync"
-                        disabled="@(!PxeServerService.IsRunning)">
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Accent"
+                                  @onclick="RestartServerAsync"
+                                  disabled="@(!PxeServerService.IsRunning)">
                         重启服务器
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+                    </FluentButton>
+                </FluentButtonGroup>
+            </FluentGridItem>
+        </FluentGrid>
+    </FluentCardBody>
+</FluentCard>
 
-    <!-- 网络接口选择 -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h3>网络设置</h3>
-        </div>
-        <div class="card-body">
-            <div class="mb-4">
-                <label class="form-label font-weight-bold">选择网络接口</label>
-                <select
-                    class="form-control"
-                    @bind="SelectedInterfaceIp"
-                    disabled="@PxeServerService.IsRunning">
-                    <option value="">-- 请选择网络接口 --</option>
-                    @foreach (var iface in NetworkInterfaces)
-                    {
-                        <option value="@iface.IPAddress">@iface.Name (@iface.IPAddress)</option>
-                    }
-                </select>
-            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="form-label font-weight-bold">DHCP 设置</label>
-                    <div class="mb-2">
-                        <label class="form-label">启动文件名</label>
-                        <input
-                            type="text"
-                            class="form-control"
-                            @bind="DhcpService.BootFileName"
-                            placeholder="pxeboot.0"
-                            disabled="@PxeServerService.IsRunning"/>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">下一跳服务器IP</label>
-                        <input
-                            type="text"
-                            class="form-control"
-                            @bind="DhcpService.NextServerIp"
-                            placeholder="TFTP服务器IP地址"
-                            disabled="@PxeServerService.IsRunning"/>
-                    </div>
-                </div>
-                <div>
-                    <label class="form-label font-weight-bold">TFTP 设置</label>
-                    <div class="mb-2">
-                        <label class="form-label">根目录</label>
-                        <input
-                            type="text"
-                            class="form-control"
-                            @bind="TftpService.RootDirectory"
-                            placeholder="tftpboot"
-                            disabled="@PxeServerService.IsRunning"/>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">状态</label>
-                        <span class="d-block mt-1 text-sm">
-                            TFTP服务器：@(TftpService.IsRunning ? "运行中" : "已停止")<br/>
-                            文件数量：@TftpFiles.Count
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- 网络接口选择 -->
+<FluentCard class="mt-4">
+    <FluentCardHeader>
+        <FluentText Variant="TextVariants.Title3">网络设置</FluentText>
+    </FluentCardHeader>
+    <FluentCardBody>
+        <FluentStack Spacing="16px">
+            <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                <FluentLabel Required="true">选择网络接口</FluentLabel>
+                <FluentSelect Items="NetworkInterfaces"
+                    @bind-Value="SelectedInterfaceIp"
+                    Disabled="@PxeServerService.IsRunning"
+                    Width="300px">
+                </FluentSelect>
+            </FluentStack>
 
-    <!-- TFTP文件管理 -->
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-            <h3>TFTP文件管理</h3>
-        </div>
-        <div class="card-body">
-            <div class="mb-4">
-                <button class="btn btn-primary" @onclick="ShowUploadModal">上传文件</button>
-                <button class="btn btn-info ml-2" @onclick="RefreshFileList">刷新列表</button>
-            </div>
+            <FluentGrid>
+                <FluentGridItem Size="6">
+                    <FluentStack Orientation="Orientation.Vertical" Spacing="12px">
+                        <FluentLabel>DHCP 设置</FluentLabel>
+                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                            <FluentLabel For="bootFileName">启动文件名</FluentLabel>
+                            <FluentTextField
+                                Id="bootFileName"
+                                @bind-Value="DhcpService.BootFileName"
+                                Placeholder="pxeboot.0"
+                                Disabled="@PxeServerService.IsRunning"/>
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                            <FluentLabel For="nextServerIp">下一跳服务器IP</FluentLabel>
+                            <FluentTextField
+                                Id="nextServerIp"
+                                @bind-Value="DhcpService.NextServerIp"
+                                Placeholder="TFTP服务器IP地址"
+                                Disabled="@PxeServerService.IsRunning"/>
+                        </FluentStack>
+                    </FluentStack>
+                </FluentGridItem>
 
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th>文件名</th>
-                        <th>大小</th>
-                        <th>修改日期</th>
-                        <th>操作</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @if (TftpFiles.Count == 0)
-                    {
-                        <tr>
-                            <td colspan="4" class="text-center">没有文件</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        foreach (var file in TftpFiles)
-                        {
-                            <tr>
-                                <td>@file.Name</td>
-                                <td>@file.FormattedSize</td>
-                                <td>@file.LastModified.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                <td>
-                                    <button
-                                        class="btn btn-danger btn-sm"
-                                        @onclick="() => DeleteFile(file.Name)"
-                                        disabled="@PxeServerService.IsRunning">
-                                        删除
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+                <FluentGridItem Size="6">
+                    <FluentStack Orientation="Orientation.Vertical" Spacing="12px">
+                        <FluentLabel>TFTP 设置</FluentLabel>
+                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                            <FluentLabel For="rootDirectory">根目录</FluentLabel>
+                            <FluentTextField
+                                Id="rootDirectory"
+                                @bind-Value="TftpService.RootDirectory"
+                                Placeholder="tftpboot"
+                                Disabled="@PxeServerService.IsRunning"/>
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                            <FluentLabel>状态</FluentLabel>
+                            <FluentStack Orientation="Orientation.Vertical">
+                                <FluentText>TFTP服务器：@(TftpService.IsRunning ? "运行中" : "已停止")</FluentText>
+                                <FluentText>文件数量：@TftpFiles.Count()</FluentText>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentStack>
+                </FluentGridItem>
+            </FluentGrid>
+        </FluentStack>
+    </FluentCardBody>
+</FluentCard>
 
-    <!-- 上传文件模态框 -->
-    @if (ShowUploadModalFlag)
-    {
-        <div class="modal-overlay" @onclick="HideUploadModal">
-            <div class="modal-content" @onclick:stopPropagation>
-                <div class="modal-header">
-                    <h3>上传文件到TFTP目录</h3>
-                    <button class="close" @onclick="HideUploadModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <InputFile class="form-control" OnChange="HandleFileSelection"/>
+<!-- TFTP文件管理 -->
+<FluentCard class="mt-4">
+    <FluentCardHeader>
+        <FluentText Variant="TextVariants.Title3">TFTP文件管理</FluentText>
+    </FluentCardHeader>
+    <FluentCardBody>
+        <FluentStack Spacing="16px">
+            <FluentStack Orientation="Orientation.Horizontal" Spacing="8px">
+                <FluentButton Appearance="Appearance.Accent" @onclick="ShowUploadModal">
+                    <FluentIcon Value="@(new Icons.Filled.Size24.Add())"/>
+                    <span>上传文件</span>
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Neutral" @onclick="RefreshFileList">
+                    <FluentIcon Value="@(new Icons.Filled.Size24.New())"/>
+                    <span>刷新列表</span>
+                </FluentButton>
+            </FluentStack>
 
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="HideUploadModal">取消</button>
-                    <button
-                        class="btn btn-primary"
-                        @onclick="UploadFileAsync"
-                        disabled="@(SelectedFile == null || Uploading)">
-                        @(Uploading ? "上传中..." : "上传")
-                    </button>
-                </div>
-            </div>
-        </div>
-    }
-</div>
+            <FluentDataGrid Items="@TftpFiles" Sortable="true">
+                <PropertyColumn Title="文件名"
+                                Property="@(x => x.Name)"
+                                Sortable="true"/>
+                <PropertyColumn Title="大小"
+                                Property="@(x => x.FormattedSize)"
+                                Sortable="true"/>
+                <PropertyColumn Title="修改日期"
+                                Property="@(x => x.LastModified.ToString("yyyy-MM-dd HH:mm:ss"))"
+                                Sortable="true"/>
+                <TemplateColumn Title="操作">
+                    <Template Context="file">
+                        <FluentButton
+                            Appearance="Appearance.Accent"
+                            Size="Size.Small"
+                            @onclick="() => DeleteFile(context.Name)"
+                            Disabled="@PxeServerService.IsRunning">
+                            <FluentIcon Value="@(new Icons.Filled.Size24.Delete())" Size="16"/>
+                            <span>删除</span>
+                        </FluentButton>
+                    </Template>
+                </TemplateColumn>
+            </FluentDataGrid>
+        </FluentStack>
+    </FluentCardBody>
+</FluentCard>
+
+<!-- 上传文件对话框 -->
+<FluentDialog @bind-Visible="ShowUploadModalFlag">
+    <FluentDialogHeader>
+        <FluentDialogTitle>上传文件到TFTP目录</FluentDialogTitle>
+    </FluentDialogHeader>
+    <FluentDialogBody>
+        <InputFile OnChange="HandleFileSelection" class="w-full"/>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButtonGroup>
+            <FluentButton Appearance="Appearance.Neutral" @onclick="HideUploadModal">取消</FluentButton>
+            <FluentButton
+                Appearance="Appearance.Accent"
+                @onclick="UploadFileAsync"
+                Disabled="@(SelectedFile == null || Uploading)">
+                @(Uploading ? "上传中..." : "上传")
+            </FluentButton>
+        </FluentButtonGroup>
+    </FluentDialogFooter>
+</FluentDialog>
+
 
 @code {
-    private async Task ShowToast(string message, string type = "success")
-    {
-        await jsRuntime.InvokeVoidAsync("showToast", message, type, 3000);
-    }
-    
+    private async Task ShowToast(string message, string type = "success") { await jsRuntime.InvokeVoidAsync("showToast", message, type, 3000); }
+
     private List<NetworkInterfaceInfo> NetworkInterfaces   { get; set; } = [];
-    private List<TftpFileInfo>         TftpFiles           { get; set; } = [];
+    private IQueryable<TftpFileInfo>   TftpFiles           { get; set; }
     private string                     SelectedInterfaceIp { get; set; } = string.Empty;
     private bool                       ShowUploadModalFlag { get; set; } = false;
     private IBrowserFile?              SelectedFile        { get; set; }
@@ -260,7 +241,7 @@
         catch (Exception ex) { await ShowToast("重启服务器失败：" + ex.Message, "error"); }
     }
 
-    private void RefreshFileList() { TftpFiles = TftpService.GetFiles(); }
+    private void RefreshFileList() { TftpFiles = TftpService.GetFiles().AsQueryable(); }
 
     private void ShowUploadModal()
     {

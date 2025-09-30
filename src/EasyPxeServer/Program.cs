@@ -1,9 +1,10 @@
 ﻿using EasyPxeServer.Services;
-using Serilog;
-using System.Security.Principal;
-using System.Reflection;
-using System.IO;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.FluentUI.AspNetCore.Components;
+using Serilog;
+using System.IO;
+using System.Reflection;
+using System.Security.Principal;
 
 
 if (Environment.OSVersion.Platform is PlatformID.Win32Windows or PlatformID.Win32NT or PlatformID.Win32S or PlatformID.WinCE)
@@ -44,7 +45,8 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton<DHCPService>();
 builder.Services.AddSingleton<TFTPService>();
 builder.Services.AddSingleton<PxeServerService>();
-builder.Services.AddSingleton<VncService>();
+builder.Services.AddSingleton<VncService>(); 
+builder.Services.AddFluentUIComponents();
 
 
 var app = builder.Build();

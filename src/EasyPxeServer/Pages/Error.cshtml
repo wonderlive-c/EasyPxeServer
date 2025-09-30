@@ -2,39 +2,77 @@
 @model EasyPxeServer.Pages.ErrorModel
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Error</title>
-    <link href="~/css/bootstrap/bootstrap.min.css" rel="stylesheet" />
-    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
+    <title>错误</title>
+    <!-- 使用Fluent UI样式 -->
+    <link href="~/EasyPxeServer.styles.css" rel="stylesheet" />
 </head>
 
-<body>
-    <div class="main">
-        <div class="content px-4">
-            <h1 class="text-danger">Error.</h1>
-            <h2 class="text-danger">An error occurred while processing your request.</h2>
+<body style="background-color: var(--palette-neutral-background-1);">
+    <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 2rem;">
+        <div style="max-width: 600px; width: 100%;">
+            <Microsoft.FluentUI.AspNetCore.Components.FluentCard Elevation="Elevation.Large" Style="padding: 2rem;">
+                <Microsoft.FluentUI.AspNetCore.Components.FluentStack Orientation="Orientation.Vertical" Spacing="24px">
+                    <Microsoft.FluentUI.AspNetCore.Components.FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
+                        <Microsoft.FluentUI.AspNetCore.Components.FluentIcon 
+                            Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Filled.Size24.ErrorCircle())" 
+                            Size="Size.XXLarge" 
+                            Style="color: var(--palette-danger-foreground);" />
+                    </Microsoft.FluentUI.AspNetCore.Components.FluentStack>
+                    
+                    <Microsoft.FluentUI.AspNetCore.Components.FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Spacing="12px">
+                        <Microsoft.FluentUI.AspNetCore.Components.FluentText Variant="TextVariants.Title1" Style="color: var(--palette-danger-foreground);">
+                            错误
+                        </Microsoft.FluentUI.AspNetCore.Components.FluentText>
+                        
+                        <Microsoft.FluentUI.AspNetCore.Components.FluentText Variant="TextVariants.Title2" Style="color: var(--palette-danger-foreground);">
+                            处理您的请求时发生错误
+                        </Microsoft.FluentUI.AspNetCore.Components.FluentText>
+                    </Microsoft.FluentUI.AspNetCore.Components.FluentStack>
 
-            @if (Model.ShowRequestId)
-            {
-                <p>
-                    <strong>Request ID:</strong> <code>@Model.RequestId</code>
-                </p>
-            }
+                    @if (Model.ShowRequestId)
+                    {
+                        <Microsoft.FluentUI.AspNetCore.Components.FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
+                            <Microsoft.FluentUI.AspNetCore.Components.FluentText>请求ID: </Microsoft.FluentUI.AspNetCore.Components.FluentText>
+                            <Microsoft.FluentUI.AspNetCore.Components.FluentBadge Appearance="Microsoft.FluentUI.AspNetCore.Components.BadgeAppearance.Outline">
+                                @Model.RequestId
+                            </Microsoft.FluentUI.AspNetCore.Components.FluentBadge>
+                        </Microsoft.FluentUI.AspNetCore.Components.FluentStack>
+                    }
 
-            <h3>Development Mode</h3>
-            <p>
-                Swapping to the <strong>Development</strong> environment displays detailed information about the error that occurred.
-            </p>
-            <p>
-                <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-                It can result in displaying sensitive information from exceptions to end users.
-                For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-                and restarting the app.
-            </p>
+                    <Microsoft.FluentUI.AspNetCore.Components.FluentCard Elevation="Elevation.Medium" Style="background-color: var(--palette-neutral-background-2);">
+                        <Microsoft.FluentUI.AspNetCore.Components.FluentCardHeader>
+                            <Microsoft.FluentUI.AspNetCore.Components.FluentText Variant="TextVariants.Title3">开发模式</Microsoft.FluentUI.AspNetCore.Components.FluentText>
+                        </Microsoft.FluentUI.AspNetCore.Components.FluentCardHeader>
+                        <Microsoft.FluentUI.AspNetCore.Components.FluentCardBody>
+                            <Microsoft.FluentUI.AspNetCore.Components.FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                                <Microsoft.FluentUI.AspNetCore.Components.FluentText>
+                                    切换到<strong>开发</strong>环境可以显示有关发生的错误的详细信息。
+                                </Microsoft.FluentUI.AspNetCore.Components.FluentText>
+                                <Microsoft.FluentUI.AspNetCore.Components.FluentText>
+                                    <strong>已部署的应用程序不应启用开发环境。</strong>
+                                    这可能导致向最终用户显示异常中的敏感信息。
+                                    对于本地调试，请将<strong>ASPNETCORE_ENVIRONMENT</strong>环境变量设置为<strong>Development</strong>
+                                    并重新启动应用程序以启用<strong>开发</strong>环境。
+                                </Microsoft.FluentUI.AspNetCore.Components.FluentText>
+                            </Microsoft.FluentUI.AspNetCore.Components.FluentStack>
+                        </Microsoft.FluentUI.AspNetCore.Components.FluentCardBody>
+                    </Microsoft.FluentUI.AspNetCore.Components.FluentCard>
+
+                    <Microsoft.FluentUI.AspNetCore.Components.FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center">
+                        <Microsoft.FluentUI.AspNetCore.Components.FluentAnchor 
+                            Href="/" 
+                            Appearance="Microsoft.FluentUI.AspNetCore.Components.Appearance.Accent" 
+                            Style="width: 120px; text-align: center;">
+                            返回主页
+                        </Microsoft.FluentUI.AspNetCore.Components.FluentAnchor>
+                    </Microsoft.FluentUI.AspNetCore.Components.FluentStack>
+                </Microsoft.FluentUI.AspNetCore.Components.FluentStack>
+            </Microsoft.FluentUI.AspNetCore.Components.FluentCard>
         </div>
     </div>
 </body>
