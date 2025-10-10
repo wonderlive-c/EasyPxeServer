@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /src/EasyPxeServer/log.txt
 /src/EasyPxeServer/tftpboot/ts/all
+/src/FluentPxeServer/log.txt

@@ -7,7 +7,7 @@ using Microsoft.JSInterop;
 
 namespace FluentPxeServer.Components.Cookies;
 
-public class CookieConsentService(IJSRuntime jsRuntime) : JSModule(jsRuntime, "./_content/FluentUI.Demo.Shared/Components/Cookies/CookieConsent.razor.js")
+public class CookieConsentService(IJSRuntime jsRuntime) : JSModule(jsRuntime, "./_content/FluentPxeServer/Components/Cookies/CookieConsent.razor.js")
 {
     private CookieState? _cookieState;
 

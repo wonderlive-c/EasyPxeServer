@@ -1,4 +1,5 @@
-@import '_content/Microsoft.FluentUI.AspNetCore.Components/css/reboot.css';
+﻿@import '_content/Microsoft.FluentUI.AspNetCore.Components/css/reboot.css';
+@import 'css/site.css';
 
 body {
     --body-font: "Segoe UI Variable", "Segoe UI", sans-serif;

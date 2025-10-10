@@ -1,6 +1,6 @@
 ﻿@implements IDisposable
-@inject IDialogService              DialogService
-@inject IMessageService             MessageService
+@inject IDialogService  DialogService
+@inject IMessageService MessageService
 @inject ILogger<NotificationCenter> logger
 
 <FluentButton BackgroundColor="var(--neutral-layer-4)" OnClick="OpenNotificationCenterAsync" Title="Notification center">
@@ -17,17 +17,27 @@
             </ChildContent>
         </FluentCounterBadge>
     }
-    else { @NotificationIcon() }
+    else
+    {
+        @NotificationIcon()
+    }
 </FluentButton>
 
 @code {
     private IDialogReference? _dialog;
 
-    protected override void OnInitialized() { MessageService.OnMessageItemsUpdated += UpdateCount; }
+    protected override void OnInitialized()
+    {
+        MessageService.OnMessageItemsUpdated += UpdateCount;
+    }
 
-    private void UpdateCount() { InvokeAsync(StateHasChanged); }
+    private void UpdateCount()
+    {
+        InvokeAsync(StateHasChanged);
+    }
 
-    private RenderFragment NotificationIcon() => @<FluentIcon Value="@(new Icons.Regular.Size20.Alert())" Color="Color.Neutral" Title="Notification center"/>;
+    private RenderFragment NotificationIcon() =>
+        @<FluentIcon Value="@(new Icons.Regular.Size20.Alert())" Color="Color.Neutral" Title="Notification center" />;
 
     private async Task OpenNotificationCenterAsync()
     {
@@ -35,16 +45,32 @@
 
         _dialog = await DialogService.ShowPanelAsync<NotificationCenterPanel>(new DialogParameters<GlobalState>()
         {
-            Alignment       = HorizontalAlignment.Right,
-            Title           = $"Notifications",
-            PrimaryAction   = null,
+            Alignment = HorizontalAlignment.Right,
+            Title = $"Notifications",
+            PrimaryAction = null,
             SecondaryAction = null,
-            ShowDismiss     = true
+            ShowDismiss = true
         });
         DialogResult result = await _dialog.Result;
+        HandlePanel(result);
     }
 
+    private static void HandlePanel(DialogResult result)
+    {
+        if (result.Cancelled)
+        {
+            return;
+        }
 
-    public void Dispose() { MessageService.OnMessageItemsUpdated -= UpdateCount; }
+        if (result.Data is not null)
+        {
+            return;
+        }
+    }
+
+    public void Dispose()
+    {
+        MessageService.OnMessageItemsUpdated -= UpdateCount;
+    }
 
 }

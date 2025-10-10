@@ -1,6 +1,26 @@
 ﻿@inject IDialogService        DialogService
 @inject ILogger<SiteSettings> logger
 
-<FluentButton BackgroundColor="var(--neutral-layer-4)" OnClick="OpenSiteSettingsAsync" Title="Site settings">
-    <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" Color="Color.Neutral" Title="Site settings"/>
+<FluentButton BackgroundColor="var(--neutral-layer-4)" OnClick="OpenSiteSettingsAsync" Title="设置">
+    <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" Color="Color.Neutral" Title="设置"/>
 </FluentButton>
+@code
+{
+    private IDialogReference? _dialog;
+
+    private async Task OpenSiteSettingsAsync()
+    {
+        logger.LogInformation($"Open site settings");
+        _dialog = await DialogService.ShowPanelAsync<SiteSettingsPanel>(new DialogParameters()
+        {
+            ShowTitle       = true,
+            Title           = "Site settings",
+            Alignment       = HorizontalAlignment.Right,
+            PrimaryAction   = "OK",
+            SecondaryAction = null,
+            ShowDismiss     = true
+        });
+
+        await _dialog.Result;
+    }
+}

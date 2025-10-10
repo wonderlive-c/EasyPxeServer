@@ -7,7 +7,7 @@ using Microsoft.FluentUI.AspNetCore.Components;
 
 namespace FluentPxeServer.Components.Cookies;
 
-public partial class CookieConsent()
+public partial class CookieConsent
 {
     private const string GA_MEASUREMENT_ID = "G-VML6BZWWTC"; // Google Analytics measurement ID
     private const string MC_PROIOJECT_ID = "hnr14wvzj8";     // Microsoft Clarity project ID
@@ -33,6 +33,8 @@ public partial class CookieConsent()
             {
                 await InitAnalyticsAsync();
             }
+
+            await AcceptPolicyAsync();
             StateHasChanged();
         }
     }
