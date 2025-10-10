@@ -1,0 +1,6 @@
+﻿@inject IDialogService        DialogService
+@inject ILogger<SiteSettings> logger
+
+<FluentButton BackgroundColor="var(--neutral-layer-4)" OnClick="OpenSiteSettingsAsync" Title="Site settings">
+    <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" Color="Color.Neutral" Title="Site settings"/>
+</FluentButton>

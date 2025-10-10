@@ -1,10 +1,10 @@
-﻿using EasyPxeServer.Services;
-using Microsoft.Extensions.FileProviders;
+﻿using Microsoft.Extensions.FileProviders;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Serilog;
 using System.IO;
 using System.Reflection;
 using System.Security.Principal;
+using PxeServices;
 
 
 if (Environment.OSVersion.Platform is PlatformID.Win32Windows or PlatformID.Win32NT or PlatformID.Win32S or PlatformID.WinCE)
@@ -42,8 +42,8 @@ builder.Configuration.AddJsonFile(@"appsettings.log.json");
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddControllers();
-builder.Services.AddSingleton<DHCPService>();
-builder.Services.AddSingleton<TFTPService>();
+builder.Services.AddSingleton<DhcpService>();
+builder.Services.AddSingleton<TftpService>();
 builder.Services.AddSingleton<PxeServerService>();
 builder.Services.AddSingleton<VncService>(); 
 builder.Services.AddFluentUIComponents();

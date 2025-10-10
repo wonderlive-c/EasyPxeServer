@@ -1,11 +1,11 @@
-﻿using System.Net;
-using System.Net.NetworkInformation;
+﻿using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Text;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace EasyPxeServer.Services
+namespace PxeServices
 {
-    public class PxeServerService(DHCPService dhcpService, TFTPService tftpService,ILogger<PxeServerService> logger) : IHostedService
+    public class PxeServerService(DhcpService dhcpService, TftpService tftpService, ILogger<PxeServerService> logger) : IHostedService
     {
         private bool _isRunning = false;
 

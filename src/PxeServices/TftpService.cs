@@ -1,11 +1,13 @@
 ﻿using System.Net;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Tftp.Net;
 
-namespace EasyPxeServer.Services;
+namespace PxeServices;
 
-public class TFTPService : IHostedService
+public class TftpService : IHostedService
 {
-    private readonly ILogger<TFTPService> logger;
+    private readonly ILogger<TftpService> logger;
     private          TftpServer?          tftpServer;
 
     public bool IsRunning => tftpServer != null;
@@ -14,7 +16,7 @@ public class TFTPService : IHostedService
 
     public string SelectedInterfaceIp { get; set; } = "";
 
-    public TFTPService(ILogger<TFTPService> logger)
+    public TftpService(ILogger<TftpService> logger)
     {
         this.logger = logger;
         // 确保TFTP根目录存在

@@ -1,13 +1,15 @@
-﻿using DotNetProjects.DhcpServer;
-using System.Net;
+﻿using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using DotNetProjects.DhcpServer;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace EasyPxeServer.Services
+namespace PxeServices
 {
     // 在关键操作和分支处增加详细日志，便于调试
-    public class DHCPService(ILogger<DHCPService> logger) : IHostedService
+    public class DhcpService(ILogger<DhcpService> logger) :IHostedService
     {
         private CancellationTokenSource? _cancellationTokenSource;
 

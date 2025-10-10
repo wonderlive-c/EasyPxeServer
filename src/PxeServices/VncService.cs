@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.JSInterop;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
-namespace EasyPxeServer.Services
+namespace PxeServices
 {
     /// <summary>
     /// VNC连接服务，用于管理VNC连接状态和操作

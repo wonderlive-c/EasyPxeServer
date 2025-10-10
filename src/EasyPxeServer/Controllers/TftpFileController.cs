@@ -1,16 +1,16 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using EasyPxeServer.Services;
 using System.IO;
 using System.Net.Mime;
 using System.Threading.Tasks;
+using PxeServices;
 
 namespace EasyPxeServer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TftpFileController(TFTPService tftpService, ILogger<TftpFileController> logger) : ControllerBase
+    public class TftpFileController(TftpService tftpService, ILogger<TftpFileController> logger) : ControllerBase
     {
         /// <summary>
         /// 获取目录结构（包括文件和子目录）
@@ -178,7 +178,7 @@ namespace EasyPxeServer.Controllers
         private string FormatFileSize(long bytes)
         {
             string[] sizes = { "B", "KB", "MB", "GB", "TB" };
-            int      order = 0;
+            var      order = 0;
             double   size  = bytes;
 
             while (size  >= 1024
@@ -188,7 +188,7 @@ namespace EasyPxeServer.Controllers
                 size = size / 1024;
             }
 
-            return string.Format("{0:0.##} {1}", size, sizes[order]);
+            return $"{size:0.##} {sizes[order]}";
         }
 
         /// <summary>

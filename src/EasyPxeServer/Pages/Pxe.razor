@@ -1,10 +1,10 @@
-﻿@page "/pxe"
-@using EasyPxeServer.Services
+﻿hao@page "/pxe"
 @inject PxeServerService PxeServerService
-@inject DHCPService      DhcpService
-@inject TFTPService      TftpService
+@inject DhcpService      DhcpService
+@inject TftpService      TftpService
 @inject IJSRuntime       jsRuntime
 @using Microsoft.FluentUI.AspNetCore.Components
+@using PxeServices
 
 
 <PageTitle>PXE服务器管理</PageTitle>
@@ -176,7 +176,7 @@
         </FluentButtonGroup>
     </FluentDialogFooter>
 </FluentDialog>
-
+<FluentDialogProvider />
 
 @code {
     private async Task ShowToast(string message, string type = "success") { await jsRuntime.InvokeVoidAsync("showToast", message, type, 3000); }
