@@ -1,0 +1,10 @@
+{
+  "version": "3.0",
+  "defaultProvider": "jsdelivr",
+  "libraries": [
+    {
+      "library": "@flexem/novnc@1.1.6",
+      "destination": "wwwroot/flexem/novnc/"
+    }
+  ]
+}

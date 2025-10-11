@@ -2,10 +2,8 @@
 @inject PxeServerService PxeServerService
 @inject DhcpService      DhcpService
 @inject TftpService      TftpService
-@inject IJSRuntime       jsRuntime
 @inject IToastService    ToastService
 @inject IDialogService   DialogService
-@using Microsoft.FluentUI.AspNetCore.Components
 @using PxeServices
 
 
@@ -135,7 +133,7 @@
                     </FluentButton>
                 </FluentStack>
 
-                <FluentDataGrid Items="@TftpFiles" Sortable="true">
+                <FluentDataGrid Items="@TftpFiles" Sortable="true" AutoFit="false">
                     <PropertyColumn Title="文件名"
                                     Property="@(x => x.Name)"
                                     Sortable="true"/>
@@ -186,16 +184,17 @@
 
     private List<NetworkInterfaceInfo> NetworkInterfaces   { get; set; } = [];
     private IQueryable<TftpFileInfo>   TftpFiles           { get; set; }
-    private string                     SelectedInterfaceIp { get; set; } = string.Empty;
+    private string?                    SelectedInterfaceIp { get; set; }
     private bool                       ShowUploadModalFlag { get; set; } = true;
     private IBrowserFile?              SelectedFile        { get; set; }
     private bool                       Uploading           { get; set; } = false;
-    private FluentDialog               _deleteFileDialog;
 
     protected override void OnInitialized()
     {
         // 获取网络接口列表
         NetworkInterfaces = PxeServerService.GetNetworkInterfaces();
+        if (string.IsNullOrEmpty(SelectedInterfaceIp)) { SelectedInterfaceIp = NetworkInterfaces.FirstOrDefault()?.IPAddress; }
+
         // 获取TFTP文件列表
         RefreshFileList();
         // 监听状态变化
@@ -208,7 +207,15 @@
         {
             if (string.IsNullOrEmpty(SelectedInterfaceIp))
             {
-                await jsRuntime.InvokeVoidAsync("alert", "请先选择网络接口");
+                var dialogInstance = await DialogService.ShowDialogAsync(@<div>
+                                                                             <p> 请先选择网络接口 </p>
+                                                                         </div>,
+                                                                         new DialogParameters
+                                                                         {
+                                                                             Title = $"提示", TrapFocus = false, DialogType = DialogType.MessageBox, Modal = false, ShowDismiss = false, PrimaryAction = "确定"
+                                                                         });
+                await dialogInstance.Result;
+                await dialogInstance.CloseAsync();
                 return;
             }
 

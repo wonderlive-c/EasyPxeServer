@@ -113,3 +113,7 @@ internal class AppVersionService : IAppVersionService
         return strVersion;
     }
 }
+
+public class VncHelper(IJSRuntime js) : JSModule(js, "/js/vnc-helper.js")
+{
+}

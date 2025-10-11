@@ -104,6 +104,11 @@
     
     window.beginConnect = function (targetId, url, dotNetRef, password){
         
+        console.log();
+        console.log("targetId: " + targetId);
+        console.log("url: " + url);
+        console.log("dotNetRef: " + dotNetRef);
+        console.log("password: " + password);
         ref=dotNetRef;
         // Creating a new RFB object will start a new connection
         rfb = new RFB(document.getElementById(targetId), url,

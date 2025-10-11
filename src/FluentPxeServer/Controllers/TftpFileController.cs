@@ -72,6 +72,7 @@ namespace FluentPxeServer.Controllers
 
                 // 返回文件流
                 var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+                Response.StatusCode = StatusCodes.Status200OK;
                 return File(stream, mimeType, fileInfo.Name);
             }
             catch (Exception ex)

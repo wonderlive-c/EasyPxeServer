@@ -27,4 +27,16 @@
 	<ItemGroup>
 		<ProjectReference Include="..\PxeServices\PxeServices.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="tftpboot\ipxe-x86_64.efi">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="tftpboot\ipxe.pxe">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="tftpboot\menu.txt">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 </Project>
