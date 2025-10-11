@@ -1,0 +1,81 @@
+﻿#!ipxe
+   set menu-timeout 30000
+   set menu-default centos7
+   set xieyi:string http
+   isset ${ip} || dhcp
+#   console --picture http://${next-server}/ipxe.png   
+:start
+
+  menu iPXE Boot Menu --${ip}
+  item --gap --             ----------------------------- Install OS ----------------------------
+  
+#  item winPE               Pxe Install Windows (disable)
+  item rhel6                 Pxe Install rhel6 (only Lecagy BIOS)
+  item rhel7                 Pxe Install rhel7  
+  item centos7               Pxe Install centos7
+  item tencent-m         Pxe Install tencent-os-mini
+  item tencent-all         Pxe Install tencent-os-all
+  item LocalDisk           Local Disk
+  item reboot              Reboot
+
+  item --gap --             ---------------------------- Advanced options -----------------------
+  item --key c config       Configure settings                                   -- c
+  item shell                Drop to iPXE shell
+  item --key x exit         Exit iPXE and continue BIOS boot                     -- x
+  choose --timeout ${menu-timeout} --default ${menu-default} selected
+  goto ${selected}
+
+:shell
+  echo Type 'exit' to get the back to the menu
+  shell
+  goto start
+ 
+:reboot
+  reboot
+ 
+:exit
+  exit
+
+:config
+  config
+  goto start
+
+:LocalDisk
+  sanboot --no-describe --drive 0x80
+
+:winPE
+  initrd http://${next-server}/ISO/PE.iso
+  chain  http://${next-server}/memdisk iso raw
+
+:rhel6
+  initrd http://${next-server}/rhel/6/images/pxeboot/initrd.img 
+  kernel http://${next-server}/rhel/6/images/pxeboot/vmlinuz initrd=initrd.img  repo=http://${next-server}/rhel/6 ksdevice=link ip=dhcp lang=zh_CN.UTF-8 keymap=us vnc ks=http://${next-server}/rhel/ks6.cfg
+  boot
+  
+:rhel7
+  initrd http://${next-server}/rhel/7/images/pxeboot/initrd.img
+  chain http://${next-server}/rhel/7/images/pxeboot/vmlinuz  initrd=initrd.img ip=dhcp inst.repo=http://${next-server}/rhel/7 ksdevice=link inst.vnc inst.ks=http://${next-server}/rhel/ks7.cfg 
+  boot
+
+:centos7
+  initrd http://${next-server}/centos/images/pxeboot/initrd.img
+  chain http://${next-server}/centos/images/pxeboot/vmlinuz  initrd=initrd.img ip=dhcp inst.repo=http://${next-server}/centos ksdevice=link inst.vnc inst.ks=http://${next-server}/centos7.cfg 
+  boot
+
+:tencent-m
+  initrd http://${next-server}/ts/mini/images/pxeboot/initrd.img
+  chain http://${next-server}/ts/mini/images/pxeboot/vmlinuz  initrd=initrd.img ip=dhcp inst.repo=http://${next-server}/ts/mini ksdevice=link inst.vnc inst.ks=http://${next-server}/ts/tencent-mini.cfg 
+  boot
+
+:tencent-all
+  initrd http://${next-server}:5000/api/tftpfile/download/ts/all/images/pxeboot/initrd.img
+  chain http://${next-server}:5000/api/tftpfile/download/ts/all/images/pxeboot/vmlinuz  initrd=initrd.img ip=dhcp inst.repo=http://${next-server}:5000/api/tftpfile/download/ts/all ksdevice=link inst.vnc inst.ks=http://${next-server}:5000/api/tftpfile/download/ts/tencent-all.cfg 
+  boot
+
+
+###备用，方便复制###### ks=http://${next-server}/rhel/ks6.cfg
+:retry
+  imgfree
+  prompt Error!
+  prompt press any key to back menu
+  goto start

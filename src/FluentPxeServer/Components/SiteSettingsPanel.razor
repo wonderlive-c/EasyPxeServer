@@ -1,8 +1,4 @@
-﻿@using FluentPxeServer.Components.Cookies
-@implements IDialogContentComponent
-
-<CookieConsent @ref="@_cookie"/>
-<div>
+﻿<div>
     <FluentDesignTheme @ref=_theme
                        @bind-Mode="@Mode"
                        @bind-OfficeColor="@OfficeColor"
@@ -85,7 +81,6 @@
             <FluentButton Style="width: 125px;" OnClick="@ResetSiteAsync">Reset settings</FluentButton>
             <FluentIcon Id="info" Value="@(new Icons.Regular.Size24.Info())" OnClick="@(() => _popVisible = !_popVisible)" />
         </FluentStack>
-        <FluentButton Style="width: 125px;" OnClick="@ManageCookieSettingsAsync">Manage cookies</FluentButton>
         <p style="margin-top: 1rem;">
             <em><strong>@_status</strong></em>
         </p>

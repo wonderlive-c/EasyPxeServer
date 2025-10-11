@@ -1,7 +1,297 @@
 ﻿@page "/"
+@using PxeServices
+@inject PxeServerService PxeServerService
+@inject VncService       VncService
 
-<PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<PageTitle>PXE Server & VNC Console</PageTitle>
 
-Welcome to your new Fluent Blazor app.
+<FluentStack Orientation="Orientation.Vertical"
+             HorizontalAlignment="HorizontalAlignment.Center"
+             Spacing="32px"
+             Class="min-h-screen bg-gradient-to-b from-neutral-50 to-neutral-100 py-12 px-4">
+<!-- Header Section with Animation -->
+<FluentStack
+    HorizontalAlignment="HorizontalAlignment.Center"
+    Spacing="16px"
+    Class="animate-fade-in-up">
+    <FluentText
+        Variant="TextVariants.Display"
+        Align="TextAlign.Center"
+        Class="font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-info">
+        PXE Server & VNC Console
+    </FluentText>
+    <FluentText
+        Variant="TextVariants.Body1"
+        Align="TextAlign.Center"
+        Style="color: var(--palette-neutral-foreground-2); max-width: 800px;">
+        一站式网络引导和远程控制解决方案，为IT管理员提供高效的服务器管理工具
+    </FluentText>
+</FluentStack>
+<FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center"
+             Spacing="16px"
+             Class="animate-fade-in-up">
+    <FluentCard
+        Class="h-full shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        Elevation="Elevation.Large"
+        Interactive="true">
+        <FluentCardHeader>
+            <FluentStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Spacing="8px">
+                <FluentIcon Value="@(new Icons.Filled.Size24.Server())"/>
+                <FluentText Variant="TextVariants.Title3" Align="TextAlign.Center">PXE Server</FluentText>
+            </FluentStack>
+        </FluentCardHeader>
+        <FluentCardBody>
+            <FluentStack Orientation="Orientation.Vertical" Spacing="20px">
+                <!-- Status Badge with Custom Styling -->
+                <FluentStack HorizontalAlignment="HorizontalAlignment.Center">
+                    <FluentBadge
+                        Style="padding: 10px 16px; font-size: 16px; font-weight: 600; border-radius: 8px;"
+                        Appearance="@(PxeServerService.IsRunning ? Appearance.Filled : Appearance.Accent)">
+                        @(PxeServerService.IsRunning ? "运行中" : "已停止")
+                    </FluentBadge>
+                </FluentStack>
+
+                <!-- Description with Better Typography -->
+                <FluentStack Orientation="Orientation.Vertical" Spacing="12px">
+                    <FluentText
+                        Align="TextAlign.Center"
+                        Variant="TextVariants.Body1"
+                        Style="font-weight: 500; color: var(--palette-neutral-foreground-1);">
+                        管理网络引导和部署服务
+                    </FluentText>
+                    <FluentStack Orientation="Orientation.Vertical" Spacing="6px" class="pl-4">
+                        <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
+                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentText>DHCP 服务</FluentText>
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
+                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentText>TFTP 文件传输</FluentText>
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
+                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentText>网络引导配置</FluentText>
+                        </FluentStack>
+                    </FluentStack>
+                </FluentStack>
+
+                <!-- Action Button with Better Styling -->
+                <FluentStack HorizontalAlignment="HorizontalAlignment.Center" class="mt-2">
+                    <FluentAnchor
+                        Href="/pxe"
+                        Appearance="Appearance.Accent"
+                        Class="w-full transition-all duration-300 hover:opacity-90">
+                        <FluentIcon Value="@(new Icons.Filled.Size16.Server())"/>
+                        <span>管理PXE服务</span>
+                    </FluentAnchor>
+                </FluentStack>
+            </FluentStack>
+        </FluentCardBody>
+    </FluentCard>
+    <FluentCard
+        Class="h-full shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        Elevation="Elevation.Large"
+        Interactive="true">
+        <FluentCardHeader>
+            <FluentStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Spacing="8px">
+                <FluentIcon Value="@(new Icons.Filled.Size24.DesktopTower())"/>
+                <FluentText Variant="TextVariants.Title3" Align="TextAlign.Center">VNC Console</FluentText>
+            </FluentStack>
+        </FluentCardHeader>
+        <FluentCardBody>
+            <FluentStack Orientation="Orientation.Vertical" Spacing="20px">
+                <!-- Status Badge with Custom Styling -->
+                <FluentStack HorizontalAlignment="HorizontalAlignment.Center">
+                    <FluentBadge
+                        Style="padding: 10px 16px; font-size: 16px; font-weight: 600; border-radius: 8px;"
+                        Appearance="@(VncService.GetActiveConnections().Count > 0 ? Appearance.Filled : Appearance.Lightweight)">
+                        @(VncService.GetActiveConnections().Count) 活跃会话
+                    </FluentBadge>
+                </FluentStack>
+
+                <!-- Description with Better Typography -->
+                <FluentStack Orientation="Orientation.Vertical" Spacing="12px">
+                    <FluentText
+                        Align="TextAlign.Center"
+                        Variant="TextVariants.Body1"
+                        Style="font-weight: 500; color: var(--palette-neutral-foreground-1);">
+                        远程控制和管理计算机
+                    </FluentText>
+                    <FluentStack Orientation="Orientation.Vertical" Spacing="6px" class="pl-4">
+                        <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
+                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentText>远程桌面访问</FluentText>
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
+                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentText>键盘鼠标控制</FluentText>
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
+                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentText>多会话管理</FluentText>
+                        </FluentStack>
+                    </FluentStack>
+                </FluentStack>
+
+                <!-- Action Button with Better Styling -->
+                <FluentStack HorizontalAlignment="HorizontalAlignment.Center" class="mt-2">
+                    <FluentAnchor
+                        Href="/vnc"
+                        Appearance="Appearance.Neutral"
+                        Class="w-full transition-all duration-300 hover:opacity-90">
+                        <FluentIcon Value="@(new Icons.Filled.Size24.DesktopTower())"/>
+                        <span>打开VNC控制台</span>
+                    </FluentAnchor>
+                </FluentStack>
+            </FluentStack>
+        </FluentCardBody>
+    </FluentCard>
+</FluentStack>
+<FluentText
+    Variant="TextVariants.Title2"
+    Align="TextAlign.Center"
+    Style="font-weight: 700; color: var(--palette-neutral-foreground-1);">
+    功能概述
+</FluentText>
+
+<!-- Features Overview - Enhanced with Animation and Spacing -->
+<FluentStack
+    Orientation="Orientation.Horizontal"
+    Spacing="24px"
+    class="w-full max-w-6xl mt-16 animate-fade-in-up"
+    Style="animation-delay: 200ms;">
+
+    <!-- Divider with Styled Design -->
+    <div class="w-24 h-1 bg-gradient-to-r from-primary to-info rounded-full mx-auto"></div>
+    <FluentCard
+        Class="h-full border-0 bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        Elevation="Elevation.Medium"
+        Interactive="true">
+        <FluentCardBody>
+            <FluentStack
+                Orientation="Orientation.Vertical"
+                HorizontalAlignment="HorizontalAlignment.Center"
+                Spacing="16px"
+                Class="h-full">
+                <!-- Avatar with Custom Size and Style -->
+                <FluentAvatar
+                    BackgroundColor="var(--palette-primary-background)"
+                    Color="var(--palette-primary-foreground)"
+                    Style="width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+                    <FluentIcon Value="@(new Icons.Filled.Size24.NetworkCheck())" Size="32"/>
+                </FluentAvatar>
+
+                <!-- Title with Better Typography -->
+                <FluentText
+                    Variant="TextVariants.Heading4"
+                    Align="TextAlign.Center"
+                    Style="font-weight: 600; color: var(--palette-neutral-foreground-1);">
+                    网络引导
+                </FluentText>
+
+                <!-- Description with Better Readability -->
+                <FluentText
+                    Align="TextAlign.Center"
+                    Style="color: var(--palette-neutral-foreground-2); line-height: 1.6;"
+                    Class="flex-grow">
+                    通过网络启动计算机，无需本地存储设备，适用于大规模部署和系统安装。
+                </FluentText>
+            </FluentStack>
+        </FluentCardBody>
+    </FluentCard>
+    <FluentCard
+        Class="h-full border-0 bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        Elevation="Elevation.Medium"
+        Interactive="true">
+        <FluentCardBody>
+            <FluentStack
+                Orientation="Orientation.Vertical"
+                HorizontalAlignment="HorizontalAlignment.Center"
+                Spacing="16px"
+                Class="h-full">
+                <!-- Avatar with Custom Size and Style -->
+                <FluentAvatar
+                    BackgroundColor="var(--palette-info-background)"
+                    Color="var(--palette-info-foreground)"
+                    Style="width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+                    <FluentIcon Value="@(new Icons.Filled.Size24.Server())" Size="32"/>
+                </FluentAvatar>
+
+                <!-- Title with Better Typography -->
+                <FluentText
+                    Variant="TextVariants.Heading4"
+                    Align="TextAlign.Center"
+                    Style="font-weight: 600; color: var(--palette-neutral-foreground-1);">
+                    文件传输
+                </FluentText>
+
+                <!-- Description with Better Readability -->
+                <FluentText
+                    Align="TextAlign.Center"
+                    Style="color: var(--palette-neutral-foreground-2); line-height: 1.6;"
+                    Class="flex-grow">
+                    通过TFTP协议快速传输引导文件和系统镜像，支持高效的网络文件传输。
+                </FluentText>
+            </FluentStack>
+        </FluentCardBody>
+    </FluentCard>
+    <FluentCard
+        Class="h-full border-0 bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        Elevation="Elevation.Medium"
+        Interactive="true">
+        <FluentCardBody>
+            <FluentStack
+                Orientation="Orientation.Vertical"
+                HorizontalAlignment="HorizontalAlignment.Center"
+                Spacing="16px"
+                Class="h-full">
+                <!-- Avatar with Custom Size and Style -->
+                <FluentAvatar
+                    BackgroundColor="var(--palette-success-background)"
+                    Color="var(--palette-success-foreground)"
+                    Style="width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+                    <FluentIcon Value="@(new Icons.Filled.Size24.ArrowCircleUp())" Size="32"/>
+                </FluentAvatar>
+
+                <!-- Title with Better Typography -->
+                <FluentText
+                    Variant="TextVariants.Heading4"
+                    Align="TextAlign.Center"
+                    Style="font-weight: 600; color: var(--palette-neutral-foreground-1);">
+                    远程控制
+                </FluentText>
+
+                <!-- Description with Better Readability -->
+                <FluentText
+                    Align="TextAlign.Center"
+                    Style="color: var(--palette-neutral-foreground-2); line-height: 1.6;"
+                    Class="flex-grow">
+                    通过VNC协议远程控制计算机，支持全键盘鼠标操作和屏幕共享，实现高效远程管理。
+                </FluentText>
+            </FluentStack>
+        </FluentCardBody>
+    </FluentCard>
+
+</FluentStack>
+
+<!-- Footer Section -->
+<FluentStack
+    HorizontalAlignment="HorizontalAlignment.Center"
+    Spacing="8px"
+    Class="mt-16 text-sm text-neutral-500">
+    <FluentText>© 2023 PXE Server & VNC Console</FluentText>
+    <FluentText>|</FluentText>
+    <FluentText>版本 1.0.0</FluentText>
+</FluentStack>
+</FluentStack>
+
+@code {
+
+    protected override void OnInitialized()
+    {
+        // 监听PXE服务器状态变化
+        PxeServerService.StatusChanged += delegate { InvokeAsync(StateHasChanged); };
+    }
+
+}

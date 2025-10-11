@@ -1,10 +1,10 @@
 ﻿@using System.Runtime.InteropServices
 @using System.Reflection
 @inherits LayoutComponentBase
+@inject IAppVersionService AppVersionService
 
-@inject NavigationManager NavigationManager
+@inject NavigationManager  NavigationManager
 
-<CookieConsent />
 <div>
     <FluentLayout>
         <FluentHeader Class="siteheader">
@@ -22,19 +22,19 @@
                 <SiteSettings/>
             </div>
 
-
         </FluentHeader>
 
         <FluentStack Class="body-stack" Orientation="Orientation.Horizontal" Width="100%" HorizontalGap="0">
             <NavMenu/>
+            <div class="sidebar"></div>
             <FluentBodyContent id="body-content" Style="height: calc(100dvh - 90px);">
                 <div class="content">
-                    <article id="article">
+                    @Body
+                    @*<article id="article">
 
                         <FluentMessageBarProvider Section="@App.MESSAGES_TOP" ClearAfterNavigation="true"/>
 
-
-                    </article>
+                    </article>*@
 
                     <FluentToastProvider MaxToastCount="10"/>
                     <FluentDialogProvider/>
@@ -61,5 +61,5 @@
 </div>
 
 @code {
-    private string _version = Assembly.GetAssembly(typeof(App)).ImageRuntimeVersion;
+    private string _version => AppVersionService.Version;
 }

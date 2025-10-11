@@ -1,0 +1,439 @@
+﻿@page "/vnc-client"
+@layout EmptyLayout
+@using PxeServices
+@using FluentPxeServer.Components.Layout
+@inject VncService         VncService
+@inject IJSRuntime         JSRuntime
+@inject ILogger<VncClient> logger
+
+@* 使用空布局，不显示导航栏 *@
+
+<PageTitle>VNC 客户端 - @ConnectionName</PageTitle>
+
+<!-- Always force latest IE rendering engine (even in intranet) &
+                Chrome Frame. Remove this if you use the .htaccess -->
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+
+@* 隐藏默认的Blazor布局，使页面适合在弹出窗口中显示 *@
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+    
+    #vnc-display-container {
+        position: relative;
+    }
+    
+    .vnc-display-element {
+        outline: none;
+    }
+</style>
+<!-- actual script modules -->
+<script type="module" crossorigin="anonymous">
+    // RFB holds the API to connect and communicate with a VNC server
+    import RFB from '/flexem/novnc/core/rfb.js';
+
+    let rfb;
+    let desktopName;
+    let ref;
+
+    // When this function is called we have
+    // successfully connected to a server
+    window.connectedToServer = function (e) {
+        ref.invokeMethodAsync("OnConnect", e.detail.name);
+    }
+
+    // This function is called when we are disconnected
+    window.disconnectedFromServer = function (e) {
+
+        if (e.detail.clean) {
+            ref.invokeMethodAsync("OnDisconnect");
+        } else {
+            ref.invokeMethodAsync("OnError", "Something went wrong, connection is closed");
+        }
+    }
+
+    // When this function is called, the server requires
+    // credentials to authenticate
+    window.credentialsAreRequired = function (e) {
+        const password = prompt("Password Required:");
+        rfb.sendCredentials({ password: password });
+    }
+
+    // When this function is called we have received
+    // a desktop name from the server
+    window.updateDesktopName = function (e) {
+        desktopName = e.detail.name;
+        window.title = desktopName + " - VNC 客户端";
+    }
+
+    // Since most operating systems will catch Ctrl+Alt+Del
+    // before they get a chance to be intercepted by the browser,
+    // we provide a way to emulate this key sequence.
+    window.sendCtrlAltDel = function () {
+        rfb.sendCtrlAltDel();
+        return false;
+    }
+
+    // Show a status text in the top bar
+    function status(text) {
+        ref.invokeMethodAsync("ShowStatus", text);
+    }
+
+    // This function extracts the value of one variable from the
+    // query string. If the variable isn't defined in the URL
+    // it returns the default value instead.
+    function readQueryVariable(name, defaultValue) {
+        // A URL with a query parameter can look like this:
+        // https://www.example.com?myqueryparam=myvalue
+        //
+        // Note that we use location.href instead of location.search
+        // because Firefox < 53 has a bug w.r.t location.search
+        const re = new RegExp('.*[?&]' + name + '=([^&#]*)'),
+              match = document.location.href.match(re);
+
+        if (match) {
+            // We have to decode the URL since want the cleartext value
+            return decodeURIComponent(match[1]);
+        }
+
+        return defaultValue;
+    }
+    
+    window.beginConnect = function (targetId, url, dotNetRef, password){
+        
+        ref=dotNetRef;
+        // Creating a new RFB object will start a new connection
+        rfb = new RFB(document.getElementById(targetId), url,
+                      { credentials: { password: password } });
+
+        // Add listeners to important events from the RFB module
+        rfb.addEventListener("connect",  connectedToServer);
+        rfb.addEventListener("disconnect", disconnectedFromServer);
+        rfb.addEventListener("credentialsrequired", credentialsAreRequired);
+        rfb.addEventListener("desktopname", updateDesktopName);
+
+        // Set parameters that can be changed on an active connection
+        rfb.viewOnly = false;
+        rfb.scaleViewport = true;
+    }
+    window.disconnectNoVNC = function () {
+        if (rfb) {
+            rfb.disconnect();
+        }
+    }
+
+    window.toggleFullscreenNoVNC = function () {
+        if (rfb) {
+            rfb.toggleFullScreen();
+        }
+    }
+    
+
+</script>
+
+<FluentStack Orientation="Orientation.Vertical" Class="h-screen w-screen">
+    <!-- 进度条 -->
+    @if (ProgressPercent      > 0
+      && ProgressPercent < 100)
+    {
+        <FluentProgressBar Value="@ProgressPercent" Style="height: 4px;"/>
+    }
+
+    <!-- 标题栏 -->
+    <FluentHeader Style="background-color: var(--palette-neutral-background-2); border-bottom: 1px solid var(--palette-neutral-stroke-1);">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center" Class="w-full px-4 py-2">
+            <FluentText Variant="TextVariants.Heading5" Class="text-white">
+                VNC 客户端 - @ConnectionName (@Host:@Port)
+            </FluentText>
+            <FluentStack Orientation="Orientation.Horizontal" Spacing="8px">
+                <FluentButton
+                    @onclick="SendCtrlAltDel"
+                    Title="发送 Ctrl+Alt+Del"
+                    Appearance="Appearance.Outline"
+                    Style="border-color: var(--palette-neutral-stroke-2); color: white;">
+                    <FluentIcon Value="@(new Icons.Filled.Size24.Keyboard())" Size="16"/>
+                    <span>Ctrl+Alt+Del</span>
+                </FluentButton>
+                <FluentButton
+                    @onclick="ToggleFullscreen"
+                    Title="切换全屏"
+                    Appearance="Appearance.Outline"
+                    Style="border-color: var(--palette-neutral-stroke-2); color: white;">
+                    <FluentIcon Value="@(new Icons.Filled.Size24.Maximize())" Size="16"/>
+                    <span>全屏</span>
+                </FluentButton>
+                <FluentButton
+                    @onclick="Disconnect"
+                    Title="断开连接"
+                    Appearance="Appearance.Accent"
+                    Style="background-color: var(--palette-danger-background);">
+                    <FluentIcon Value="@(new Icons.Filled.Size24.PlugDisconnected())" Size="16"/>
+                    <span>断开</span>
+                </FluentButton>
+            </FluentStack>
+        </FluentStack>
+    </FluentHeader>
+
+    <!-- VNC 显示区域 -->
+    <FluentStack Class="flex-grow" Style="background-color: var(--palette-neutral-background-3);">
+        <div id="vnc-display-container" class="novnc-display-container" style="height: 100%; display: flex; align-items: center; justify-content: center;">
+            @if (!IsConnected)
+            {
+                <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Spacing="16px" Class="px-4 py-10">
+                    <FluentProgressRing Size="Size.Large"/>
+                    <FluentText Class="text-white">正在连接到 @Host:@Port...</FluentText>
+                    <FluentText Class="text-white">请稍候，正在建立VNC会话...</FluentText>
+                </FluentStack>
+            }
+            <div id="vnc-display-@ConnectionId" class="vnc-display-element" style="width: @Width; height: @Height;"></div>
+            @if (!string.IsNullOrEmpty(StatusMessage))
+            {
+                <FluentTooltip Text="@StatusMessage" Placement="Placement.Bottom">
+                    <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);">
+                        <FluentBadge
+                            Appearance="Appearance.Outline"
+                            Style="background-color: rgba(0, 0, 0, 0.7); color: white; padding: 8px 16px; border-color: transparent;">
+                            @StatusMessage
+                        </FluentBadge>
+                    </div>
+                </FluentTooltip>
+            }
+        </div>
+    </FluentStack>
+</FluentStack>
+
+@code {
+
+    // 从查询参数获取连接信息
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string ConnectionId { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Host { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int Port { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int Width { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int Height { get; set; }
+
+    private string ConnectionName { get; set; }
+
+    // 连接状态
+    private bool                             IsConnected     { get; set; } = false;
+    private string                           StatusMessage   { get; set; } = "准备连接...";
+    private int                              ProgressPercent { get; set; } = 0;
+    private DotNetObjectReference<VncClient> _dotNetRef;
+
+    // 实现IDisposable接口
+    private bool _disposed = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            logger.LogInformation("VNC客户端初始化");
+            // 初始化VNC连接
+            await InitializeVncConnection();
+        }
+    }
+
+
+    private async Task InitializeVncConnection()
+    {
+        try
+        {
+            // 检查必要参数
+            if (string.IsNullOrEmpty(ConnectionId)
+             || string.IsNullOrEmpty(Host)
+             || Port <= 0)
+            {
+                StatusMessage = "无效的连接参数";
+                return;
+            }
+
+            // 更新状态
+            StatusMessage   = "正在初始化VNC连接...";
+            ProgressPercent = 20;
+            StateHasChanged();
+            logger.LogInformation("初始化VNC连接");
+            // 等待一小段时间以显示进度
+            await Task.Delay(200);
+
+            // 创建DotNet引用
+            _dotNetRef = DotNetObjectReference.Create(this);
+
+            // 初始化连接
+            logger.LogInformation("开始连接到VNC服务器");
+            var connection = await VncService.GetConnection(ConnectionId);
+
+            if (connection == null)
+            {
+                logger.LogWarning("未找到连接配置");
+                StatusMessage   = "未找到连接配置";
+                ProgressPercent = 0;
+                StateHasChanged();
+                return;
+            }
+
+            logger.LogInformation("连接配置: " + connection);
+            ConnectionName = connection.ConnectionName;
+            await JSRuntime.InvokeVoidAsync("beginConnect", "vnc-display-" + ConnectionId, connection.WebSocketUrl, _dotNetRef, connection.Password);
+
+            // 更新进度
+            ProgressPercent = 60;
+            StatusMessage   = "正在建立连接...";
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "初始化VNC连接时出错");
+            StatusMessage   = $"连接失败: {ex.Message}";
+            ProgressPercent = 0;
+            StateHasChanged();
+            Console.WriteLine("VNC初始化错误: " + ex.Message);
+        }
+    }
+
+    private async Task SendCtrlAltDel()
+    {
+        try
+        {
+            logger.LogInformation("发送 Ctrl+Alt+Del");
+            await JSRuntime.InvokeVoidAsync("sendCtrlAltDel");
+            await ShowStatus("已发送 Ctrl+Alt+Del", 2000);
+        }
+        catch (Exception ex) { await ShowStatus($"发送失败: {ex.Message}", 3000); }
+    }
+
+    private async Task ToggleFullscreen()
+    {
+        logger.LogInformation("切换全屏");
+        try { await JSRuntime.InvokeVoidAsync("toggleFullscreenNoVNC", ConnectionId); }
+        catch (Exception ex) { await ShowStatus($"切换全屏失败: {ex.Message}", 3000); }
+    }
+
+    private async Task Disconnect()
+    {
+        try
+        {
+            logger.LogInformation("断开连接");
+            StatusMessage = "正在断开连接...";
+            StateHasChanged();
+
+            await JSRuntime.InvokeVoidAsync("disconnectNoVNC", ConnectionId);
+            await VncService.RemoveConnection(ConnectionId);
+
+            // 等待一小段时间以显示状态
+            await Task.Delay(500);
+
+            // 关闭窗口
+            await JSRuntime.InvokeVoidAsync("close");
+        }
+        catch (Exception ex) { await ShowStatus($"断开连接失败: {ex.Message}", 3000); }
+    }
+
+    [JSInvokable]
+    public async Task ShowStatus(string message, int duration = 3000)
+    {
+        logger.LogInformation("显示状态: " + message);
+        StatusMessage = message;
+        StateHasChanged();
+
+        await Task.Delay(duration);
+
+        // 如果状态没有被其他操作更新，则恢复默认状态
+        if (StatusMessage == message)
+        {
+            StatusMessage = IsConnected ? "已连接" : "未连接";
+            StateHasChanged();
+        }
+    }
+
+    // 处理连接状态变化的回调方法，供JavaScript调用
+    [JSInvokable]
+    public void OnConnect()
+    {
+        logger.LogInformation("连接成功");
+        IsConnected     = true;
+        StatusMessage   = "已连接";
+        ProgressPercent = 100;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnDisconnect()
+    {
+        logger.LogInformation("连接断开");
+        IsConnected     = false;
+        StatusMessage   = "已断开连接";
+        ProgressPercent = 0;
+        StateHasChanged();
+
+        // 延迟后关闭窗口
+        Task.Run(async () =>
+        {
+            await Task.Delay(2000);
+            await JSRuntime.InvokeVoidAsync("close");
+        });
+    }
+
+    [JSInvokable]
+    public void OnError(string error)
+    {
+        logger.LogError(error);
+        StatusMessage   = $"错误: {error}";
+        ProgressPercent = 0;
+        StateHasChanged();
+    }
+
+    // 确保组件实现IDisposable接口
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                // 清理托管资源
+                if (_dotNetRef != null)
+                {
+                    _dotNetRef.Dispose();
+                    _dotNetRef = null;
+                }
+
+                // 断开VNC连接（异步操作，但在Dispose中我们只能进行同步调用）
+                try
+                {
+                    // 这里不使用await，因为Dispose是同步方法
+                    if (!string.IsNullOrEmpty(ConnectionId))
+                    {
+                        _ = JSRuntime.InvokeVoidAsync("disconnectNoVNC", ConnectionId);
+                        _ = VncService.RemoveConnection(ConnectionId);
+                    }
+                }
+                catch (Exception ex) { Console.WriteLine("清理VNC连接时出错: " + ex.Message); }
+            }
+
+            // 清理非托管资源（如果有的话）
+            _disposed = true;
+        }
+    }
+
+}

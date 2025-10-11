@@ -2,8 +2,6 @@
 // This file is licensed to you under the MIT License.
 // ------------------------------------------------------------------------
 
-using FluentPxeServer.Components.Cookies;
-
 namespace FluentPxeServer.Components.Infrastructure;
 
 public static class ServiceCollectionExtensions
@@ -14,8 +12,8 @@ public static class ServiceCollectionExtensions
     /// <param name="services">Service collection</param>
     public static IServiceCollection AddFluentUIClientServices(this IServiceCollection services)
     {
+        services.AddSingleton<IAppVersionService, AppVersionService>();
         services.AddScoped<CacheStorageAccessor>();
-        services.AddScoped<CookieConsentService>();
 
         return services;
     }
@@ -26,8 +24,8 @@ public static class ServiceCollectionExtensions
     /// <param name="services">Service collection</param>
     public static IServiceCollection AddFluentUIServerServices(this IServiceCollection services)
     {
+        services.AddSingleton<IAppVersionService, AppVersionService>();
         services.AddScoped<CacheStorageAccessor>();
-        services.AddScoped<CookieConsentService>();
 
         return services;
     }

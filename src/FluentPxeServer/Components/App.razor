@@ -7,13 +7,15 @@
     <base href="/" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["FluentPxeServer.styles.css"]" />
-    <link rel="icon" type="image/png" href="favicon.png" />
-    <ImportMap />
-    <HeadOutlet />
-</head>
 
+    <ImportMap />
+
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+<FluentDesignTheme StorageName="theme" />
 <body>
-    <Routes />
+    <Routes @rendermode="InteractiveServer" />
     <script src="_framework/blazor.web.js"></script>
 </body>
 

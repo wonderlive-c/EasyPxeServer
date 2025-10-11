@@ -690,9 +690,7 @@ kbd {
         display: block !important; /* Override hidden attribute */
     }
 
-    button, .FluentButton {
-        display: none !important;
-    }
+
 
     article {
         padding: 0 !important;

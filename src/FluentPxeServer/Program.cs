@@ -2,6 +2,7 @@
 using FluentPxeServer.Components.Infrastructure;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.FluentUI.AspNetCore.Components;
+using PxeServices;
 using Serilog;
 
 namespace FluentPxeServer
@@ -23,6 +24,11 @@ namespace FluentPxeServer
             builder.Services.AddFluentUIComponents();
             builder.Services.AddFluentUIServerServices();
             builder.Logging.AddSerilog();
+            builder.Services.AddControllers();
+            builder.Services.AddSingleton<DhcpService>();
+            builder.Services.AddSingleton<TftpService>();
+            builder.Services.AddSingleton<PxeServerService>();
+            builder.Services.AddSingleton<VncService>();
 
             var app = builder.Build();
 
@@ -42,7 +48,10 @@ app.UseStaticFiles();
             app.MapStaticAssets();
         #endif
             app.UseAntiforgery();
-            
+            // 配置WebSocket支持，允许所有请求路径使用WebSocket
+            app.UseWebSockets();
+            //app.UseRouting();
+            app.MapControllers();
             app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
             app.Run();

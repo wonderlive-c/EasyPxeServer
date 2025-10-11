@@ -1,0 +1,396 @@
+﻿@page "/vnc"
+@using Microsoft.FluentUI.AspNetCore.Components
+@using Microsoft.FluentUI.AspNetCore.Components.Icons.Color
+@using PxeServices
+@inject VncService        VncService
+@inject IJSRuntime        JSRuntime
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+
+<PageTitle>VNC 控制台</PageTitle>
+
+@* 直接嵌入JavaScript代码，确保openVncClientWindow函数始终可用 *@
+<script>
+    // 直接在页面中定义openVncClientWindow函数
+    window.openVncClientWindow = function(connectionId, host, port, width, height, baseUrl) {
+        try {
+            // 计算窗口位置，使其居中显示
+            const screenWidth = window.screen.width;
+            const screenHeight = window.screen.height;
+            
+            // 确保窗口尺寸合理
+            width = Math.min(width || 1280, screenWidth - 100);
+            height = Math.min(height || 720, screenHeight - 100);
+            
+            const left = (screenWidth - width) / 2;
+            const top = (screenHeight - height) / 2;
+            
+            // 构建查询参数
+            const queryParams = new URLSearchParams({
+                connectionId: connectionId,
+                host: host,
+                port: port,
+                width: width,
+                height: height
+            });
+            
+            // 构建窗口URL
+            const url = baseUrl + 'vnc-client?' + queryParams.toString();
+            
+            // 设置窗口特性
+            const windowFeatures = `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes,status=no,toolbar=no,menubar=no,location=no`;
+            
+            // 打开新窗口
+            const vncWindow = window.open(url, `VNC_${connectionId}`, windowFeatures);
+            
+            if (vncWindow) {
+                console.log('VNC client window opened successfully');
+                
+                // 监听窗口关闭事件
+                const checkClosed = setInterval(() => {
+                    if (vncWindow.closed) {
+                        clearInterval(checkClosed);
+                        console.log('VNC client window closed');
+                    }
+                }, 500);
+                
+                // 聚焦到新窗口
+                vncWindow.focus();
+                return true;
+            } else {
+                console.error('Failed to open VNC client window (popup blocked)');
+                alert('无法打开VNC客户端窗口，可能是因为浏览器阻止了弹出窗口。请允许弹出窗口后重试。');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error opening VNC client window:', error);
+            alert(`打开VNC客户端窗口时出错: ${error.message}`);
+            return false;
+        }
+    };
+</script>
+
+<FluentStack HorizontalAlignment="HorizontalAlignment.Center" Spacing="24px" class="mt-6">
+    <FluentText Variant="TextVariants.Title1" Align="TextAlign.Center">VNC 控制台</FluentText>
+
+    <!-- 连接参数表单 -->
+    <FluentCard Class="w-full max-w-4xl shadow-lg">
+        <FluentCardHeader>
+            <FluentText Variant="TextVariants.Title3" Align="TextAlign.Center">连接参数</FluentText>
+        </FluentCardHeader>
+        <FluentCardBody>
+            <FluentForm @onsubmit="ConnectToVncServer">
+                <FluentGrid>                    
+                    <FluentGridItem Size="6">
+                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                            <FluentLabel For="host" Required="true">主机地址</FluentLabel>
+                            <FluentTextField
+                                Id="host"
+                                @bind-Value="Host"
+                                Placeholder="例如: 192.168.1.100"
+                                Required="true"/>
+                        </FluentStack>
+                    </FluentGridItem>
+                    <FluentGridItem Size="6">
+                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                            <FluentLabel For="port" Required="true">端口号</FluentLabel>
+                            <FluentNumberField
+                                Id="port"
+                                @bind-Value="Port"
+                                Minimum="1"
+                                Maximum="65535"
+                                Required="true"/>
+                        </FluentStack>
+                    </FluentGridItem>
+                </FluentGrid>
+
+                <FluentGrid>
+                    <FluentGridItem Size="6">
+                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                            <FluentLabel For="password">密码（可选）</FluentLabel>
+                            <FluentTextField
+                                Id="password"
+                                @bind-Value="Password"
+                                Placeholder="输入VNC密码"
+                                Type="InputType.Password"/>
+                        </FluentStack>
+                    </FluentGridItem>
+                    <FluentGridItem Size="6">
+                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                            <FluentLabel For="path">WebSocket路径</FluentLabel>
+                            <FluentTextField
+                                Id="path"
+                                @bind-Value="WebSocketPath"
+                                Placeholder="WebSocket代理路径"/>
+                        </FluentStack>
+                    </FluentGridItem>
+                </FluentGrid>
+
+                <FluentGrid>
+                    <FluentGridItem Size="6">
+                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                            <FluentLabel For="connectionName">连接名称（可选）</FluentLabel>
+                            <FluentTextField
+                                Id="connectionName"
+                                @bind-Value="ConnectionName"
+                                Placeholder="为连接命名"/>
+                        </FluentStack>
+                    </FluentGridItem>
+                    <FluentGridItem Size="6">
+                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                            <FluentLabel For="screenSize">屏幕大小</FluentLabel>
+                            <FluentSelect TOption="string"
+                                Id="screenSize"
+                                @bind-Value="ScreenSize">
+                                <FluentOption Value="800x600">800 x 600</FluentOption>
+                                <FluentOption Value="1024x768">1024 x 768</FluentOption>
+                                <FluentOption Value="1280x800">1280 x 800</FluentOption>
+                                <FluentOption Value="1366x768">1366 x 768</FluentOption>
+                                <FluentOption Value="1920x1080">1920 x 1080</FluentOption>
+                                <FluentOption Value="custom">自定义</FluentOption>
+                            </FluentSelect>
+                        </FluentStack>
+                    </FluentGridItem>
+                </FluentGrid>
+
+                @if (ScreenSize == "custom")
+                {
+                    <FluentGrid>
+                        <FluentGridItem Size="6">
+                            <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                                <FluentLabel For="customWidth">自定义宽度</FluentLabel>
+                                <FluentNumberField
+                                    Id="customWidth"
+                                    @bind-Value="CustomWidth"
+                                    Minimum="320"
+                                    Maximum="4096"/>
+                            </FluentStack>
+                        </FluentGridItem>
+                        <FluentGridItem Size="6">
+                            <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                                <FluentLabel For="customHeight">自定义高度</FluentLabel>
+                                <FluentNumberField
+                                    Id="customHeight"
+                                    @bind-Value="CustomHeight"
+                                    Minimum="240"
+                                    Maximum="2160"/>
+                            </FluentStack>
+                        </FluentGridItem>
+                    </FluentGrid>
+                }
+
+                <FluentStack HorizontalAlignment="HorizontalAlignment.Center" Spacing="8px" class="mt-4">
+                    <FluentButton
+                        Type="ButtonType.Submit"
+                        Appearance="Appearance.Accent"
+                        Size="Size.Large">
+                        <FluentIcon Value="@(new Icons.Regular.Size24.Bookmark())" />
+                        <span>连接VNC服务器</span>
+                    </FluentButton>
+                </FluentStack>
+            </FluentForm>
+        </FluentCardBody>
+    </FluentCard>
+
+    <!-- 活跃连接列表 -->
+    @if (ActiveConnections.Any())
+    {
+        <FluentCard Class="w-full max-w-4xl shadow-lg">
+            <FluentCardHeader>
+                <FluentText Variant="TextVariants.Title3" Align="TextAlign.Center">活跃连接</FluentText>
+            </FluentCardHeader>
+            <FluentCardBody>
+                <FluentDataGrid Items="@ActiveConnections" Sortable="true">
+                    <PropertyColumn
+                        Title="连接名称"
+                        Property="@(x => string.IsNullOrEmpty(x.ConnectionName) ? "未命名连接" : x.ConnectionName)"
+                        Sortable="true" />
+                    <PropertyColumn
+                        Title="主机"
+                        Property="@(x => x.Host)"
+                        Sortable="true" />
+                    <PropertyColumn
+                        Title="端口"
+                        Property="@(x => x.Port)"
+                        Sortable="true" />
+                    <TemplateColumn Title="操作">
+                        <FluentButtonGroup>
+                            <FluentButton
+                                Appearance="Appearance.Neutral"
+                                Size="Size.Small"
+                                @onclick="() => ReconnectConnection(context.ConnectionId)">
+                                <FluentIcon Value="@(new Size24.Reward())" Size="16" />
+                                <span>重新连接</span>
+                            </FluentButton>
+                            <FluentButton
+                                Appearance="Appearance.Accent"
+                                Size="Size.Small"
+                                @onclick="() => RemoveConnection(context.ConnectionId)">
+                                <FluentIcon Value="@(new Size24.Reward())" Size="16" />
+                                <span>断开连接</span>
+                            </FluentButton>
+                        </FluentButtonGroup>
+                    </TemplateColumn>
+                </FluentDataGrid>
+            </FluentCardBody>
+        </FluentCard>
+    }
+
+    <!-- 快速连接预设 -->
+    <FluentCard Class="w-full max-w-4xl shadow-lg">
+        <FluentCardHeader>
+            <FluentText Variant="TextVariants.Title3" Align="TextAlign.Center">快速连接</FluentText>
+        </FluentCardHeader>
+        <FluentCardBody>
+            <FluentGrid>
+                @foreach (var preset in ConnectionPresets)
+                {
+                    <FluentGridItem Size="4">
+                        <FluentCard Class="h-100 border-1 border-accent" @onclick="() => QuickConnect(preset)">
+                            <FluentCardBody>
+                                <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
+                                    <FluentText Variant="TextVariants.Heading5">@preset.Name</FluentText>
+                                    <FluentText>@preset.Host:@preset.Port</FluentText>
+                                    <FluentButton
+                                        Appearance="Appearance.Accent"
+                                        @onclick="() => QuickConnect(preset)">
+                                        <FluentIcon Value="@(new Icons.Filled.Size24.CubeQuick())" Size="16" />
+                                        <span>快速连接</span>
+                                    </FluentButton>
+                                </FluentStack>
+                            </FluentCardBody>
+                        </FluentCard>
+                    </FluentGridItem>
+                }
+            </FluentGrid>
+        </FluentCardBody>
+    </FluentCard>
+</FluentStack>
+
+@code {
+
+    // 连接参数
+    private string Host           { get; set; } = "10.10.10.10";
+    private int    Port           { get; set; } = 5901;
+    private string Password       { get; set; } = string.Empty;
+    private string WebSocketPath  { get; set; } = "websockify";
+    private string ConnectionName { get; set; } = string.Empty;
+    private string ScreenSize     { get; set; } = "1280x800";
+    private int    CustomWidth    { get; set; } = 1280;
+    private int    CustomHeight   { get; set; } = 720;
+
+    // 活跃连接列表
+    private IQueryable<VncConnection> ActiveConnections { get; set; } 
+
+    // 连接预设
+    private List<ConnectionPreset> ConnectionPresets { get; set; } =
+    [
+        new ConnectionPreset { Name = "本地测试", Host  = "localhost", Port   = 8080 },
+        new ConnectionPreset { Name = "开发服务器", Host = "10.10.10.10", Port = 5901 }
+    ];
+
+    protected override void OnInitialized()
+    {
+        // 初始化时加载活跃连接
+        UpdateActiveConnections();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        // 不需要清理JS模块引用
+        return ValueTask.CompletedTask;
+    }
+
+    private void UpdateActiveConnections() { ActiveConnections = VncService.GetActiveConnections().AsQueryable(); }
+
+    private async Task ConnectToVncServer()
+    {
+        await ConnectToVncServer(Guid.NewGuid().ToString());
+    }
+
+    private async Task ConnectToVncServer(string? connectionId)
+    {
+        // 验证输入
+        if (string.IsNullOrWhiteSpace(Host)
+         || Port <= 0
+         || Port > 65535)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "请输入有效的主机地址和端口号");
+            return;
+        }
+
+        // 创建连接ID
+        connectionId ??= Guid.NewGuid().ToString();
+
+        try
+        {
+            // 创建VNC连接
+            var uri    = new Uri(NavigationManager.BaseUri);
+            var scheme = uri.Scheme; // 结果："http" 或 "https"
+            var host = uri.Host; // 结果："localhost" 或 "www.example.com"
+            var port = uri.Port; // 结果：如 5000、8080，默认端口（80/443）可能为 null
+            await VncService.CreateConnection(connectionId, scheme is "http" ? "ws" : "wss", host, port, Host, Port, Password, WebSocketPath);
+
+            // 解析屏幕尺寸
+            var width  = CustomWidth;
+            var height = CustomHeight;
+
+            if (ScreenSize != "custom")
+            {
+                var dimensions = ScreenSize.Split('x');
+                if (dimensions.Length == 2)
+                {
+                    int.TryParse(dimensions[0], out width);
+                    int.TryParse(dimensions[1], out height);
+                }
+            }
+
+            // 打开新窗口 - 直接调用已在页面中定义的函数
+            await JSRuntime.InvokeVoidAsync("openVncClientWindow", connectionId, Host, Port, width, height, NavigationManager.BaseUri);
+
+            // 更新活跃连接列表
+            UpdateActiveConnections();
+        }
+        catch (Exception ex) { await JSRuntime.InvokeVoidAsync("alert", $"连接失败: {ex.Message}"); }
+    }
+
+    private async Task ReconnectConnection(string connectionId)
+    {
+        var connection = ActiveConnections.FirstOrDefault(c => c.ConnectionId == connectionId);
+        if (connection != null)
+        {
+            // 使用相同的参数重新连接
+            Host           = connection.Host;
+            Port           = connection.Port;
+            ConnectionName = connection.ConnectionName;
+            await ConnectToVncServer(connectionId);
+        }
+    }
+
+    private async Task RemoveConnection(string connectionId)
+    {
+        try
+        {
+            await VncService.RemoveConnection(connectionId);
+            UpdateActiveConnections();
+        }
+        catch (Exception ex) { await JSRuntime.InvokeVoidAsync("alert", $"断开连接失败: {ex.Message}"); }
+    }
+
+    private void QuickConnect(ConnectionPreset preset)
+    {
+        Host           = preset.Host;
+        Port           = preset.Port;
+        ConnectionName = preset.Name;
+    }
+
+
+    // 连接预设类
+    public class ConnectionPreset
+    {
+        public string Name { get; set; }
+        public string Host { get; set; }
+        public int    Port { get; set; }
+    }
+
+}
