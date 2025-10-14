@@ -2,7 +2,6 @@
 // This file is licensed to you under the MIT License.
 // ------------------------------------------------------------------------
 
-using System.Reflection;
 using Microsoft.FluentUI.AspNetCore.Components.Utilities;
 using Microsoft.JSInterop;
 
@@ -86,34 +85,4 @@ public class CacheStorageAccessor(IJSRuntime js, IAppVersionService vs) : JSModu
         //
         CurrentCacheVersion = vs.Version;
     }
-}
-
-public interface IAppVersionService
-{
-    string Version { get; }
-}
-
-internal class AppVersionService : IAppVersionService
-{
-    public string Version { get => GetVersionFromAssembly(); }
-
-    public static string GetVersionFromAssembly()
-    {
-        string strVersion       = default!;
-        var    versionAttribute = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-        if (versionAttribute != null)
-        {
-            var version   = versionAttribute.InformationalVersion;
-            var plusIndex = version.IndexOf('+');
-            if (plusIndex     >= 0
-             && plusIndex + 9 < version.Length) { strVersion = version[..(plusIndex + 9)]; }
-            else { strVersion                                = version; }
-        }
-
-        return strVersion;
-    }
-}
-
-public class VncHelper(IJSRuntime js) : JSModule(js, "/js/vnc-helper.js")
-{
 }

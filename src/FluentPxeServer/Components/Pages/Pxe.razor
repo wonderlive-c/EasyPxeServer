@@ -5,6 +5,7 @@
 @inject IToastService    ToastService
 @inject IDialogService   DialogService
 @using PxeServices
+@using System.Reflection.PortableExecutable
 
 
 <PageTitle>PXE服务器管理</PageTitle>
@@ -97,7 +98,7 @@
                                 <FluentLabel For="rootDirectory">根目录</FluentLabel>
                                 <FluentTextField
                                     Id="rootDirectory"
-                                    @bind-Value="TftpService.RootDirectory"
+                                    Value="@TftpService.RootDirectory"
                                     Placeholder="tftpboot"
                                     Disabled="@PxeServerService.IsRunning"/>
                             </FluentStack>

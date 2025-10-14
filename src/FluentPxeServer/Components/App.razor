@@ -2,28 +2,30 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="/" />
-    <link rel="stylesheet" href="@Assets["app.css"]" />
-    <link rel="stylesheet" href="@Assets["FluentPxeServer.styles.css"]" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <base href="/"/>
+    <link rel="stylesheet" href="@Assets["app.css"]"/>
+    <link rel="stylesheet" href="@Assets["FluentPxeServer.styles.css"]"/>
 
-    <ImportMap />
+    <ImportMap/>
 
-    <link rel="icon" type="image/png" href="favicon.png" />
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <HeadOutlet @rendermode="InteractiveServer"/>
 </head>
-<FluentDesignTheme StorageName="theme" />
+<FluentDesignTheme StorageName="theme"/>
 <body>
-    <Routes @rendermode="InteractiveServer" />
-    <script src="_framework/blazor.web.js"></script>
     <script src="_content/Microsoft.FluentUI.AspNetCore.Components/js/loading-theme.js" type="text/javascript"></script>
+    <loading-theme storage-name="theme"></loading-theme>
+    <Routes @rendermode="InteractiveServer"/>
+    <script src="_framework/blazor.web.js"></script>
 </body>
 
 </html>
+
 @code
 {
-    
+
     public const string MESSAGES_NOTIFICATION_CENTER = "NOTIFICATION_CENTER";
     public const string MESSAGES_TOP                 = "TOP";
     public const string MESSAGES_DIALOG              = "DIALOG";

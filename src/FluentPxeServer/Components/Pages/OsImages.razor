@@ -1,0 +1,122 @@
+﻿@page "/OsImages"
+@using System.IO
+@using PxeServices
+@inject IWebHostEnvironment Env
+
+<FluentCard Style="padding: 24px; max-width: 900px; margin: auto;">
+    <FluentStack HorizontalAlign="HorizontalAlignment.Center">
+        <FluentText Variant="TextVariant.Large">ISO 文件列表</FluentText>
+        <FluentButton Id="MyUploadButton" IconName="Upload">上传ISO</FluentButton>
+        <FluentInputFile @ref="@fileInput"
+                         DragDropZoneVisible="false"
+                         Mode="InputFileMode.Stream"
+                         Multiple="true"
+                         AnchorId="MyUploadButton"
+                         MaximumFileSize="@maxFileSize"
+                         Accept=".iso"
+                         OnFileUploaded="@OnFileUploadedAsync"/>
+    </FluentStack>
+    <FluentDataGrid Items="isoFiles" Style="margin-top: 24px;">
+        <PropertyColumn Property="@(x => x.Name)" Title="文件名" MinWidth="200"/>
+        <TemplateColumn Title="大小 (MB)" MinWidth="100">
+            <CellTemplate Context="item">
+                @((context.Size / (1024 * 1024)).ToString("N0"))
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="修改时间" MinWidth="180">
+            <CellTemplate Context="item">
+                @context.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="操作" MinWidth="160">
+            <CellTemplate Context="item">
+                <FluentStack>
+                    <FluentButton
+                        IconName="Download"
+                        Title="下载"
+                        @onclick="() => DownloadIso(context.Name)">
+                        下载
+                    </FluentButton>
+                    <FluentButton IconName="Delete"
+                                  Title="删除"
+                                  @onclick="() => DeleteIsoAsync(context.Name)">
+                        删除
+                    </FluentButton>
+                </FluentStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </FluentDataGrid>
+</FluentCard>
+
+@code {
+    private IQueryable<IsoFileInfo> isoFiles;
+    private FluentInputFile         fileInput;
+    private long                    maxFileSize = long.MaxValue;
+
+    async Task OnFileUploadedAsync(FluentInputFileEventArgs file)
+    {
+        var localFile = Path.Combine(ConstSetting.ISO_ROOT, file.Name);
+
+
+        // Write to the FileStream
+        // See other samples: https://docs.microsoft.com/en-us/aspnet/core/blazor/file-uploads
+        await using FileStream fs = new(localFile, FileMode.Create);
+        await file.Stream!.CopyToAsync(fs);
+        await file.Stream!.DisposeAsync();
+        LoadIsoFiles();
+    }
+
+    protected override void OnInitialized() { LoadIsoFiles(); }
+
+    private void LoadIsoFiles()
+    {
+        var isoRoot = ConstSetting.ISO_ROOT;
+        if (!Directory.Exists(isoRoot))
+            Directory.CreateDirectory(isoRoot);
+        isoFiles = Directory.EnumerateFiles(isoRoot, "*.iso").Select(file =>
+        {
+            var info = new FileInfo(file);
+
+            return new IsoFileInfo
+            {
+                Name          = info.Name,
+                Size          = info.Length,
+                LastWriteTime = info.LastWriteTime
+            };
+        }).AsQueryable();
+        StateHasChanged();
+    }
+
+
+    private async Task DownloadIso(string fileName)
+    {
+        // 跳转到后端API下载，无需JS
+        var url = $"/api/iso/download/{Uri.EscapeDataString(fileName)}";
+        NavigationManager.NavigateTo(url, forceLoad: true);
+    }
+
+    private async Task DeleteIsoAsync(string fileName)
+    {
+        var filePath = Path.Combine(ConstSetting.ISO_ROOT, fileName);
+        if (System.IO.File.Exists(filePath))
+        {
+            System.IO.File.Delete(filePath);
+            LoadIsoFiles();
+            StateHasChanged();
+        }
+    }
+
+    private class IsoFileInfo
+    {
+        public string   Name          { get; set; } = "";
+        public long     Size          { get; set; }
+        public DateTime LastWriteTime { get; set; }
+    }
+
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+
+}

@@ -12,7 +12,7 @@ public class TftpService : IHostedService
 
     public bool IsRunning => tftpServer != null;
 
-    public string RootDirectory { get; set; } = "tftpboot";
+    public string RootDirectory => ConstSetting.TFTP_ROOT;
 
     public string SelectedInterfaceIp { get; set; } = "";
 

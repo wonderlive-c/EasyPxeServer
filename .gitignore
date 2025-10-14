@@ -365,3 +365,4 @@ FodyWeavers.xsd
 /src/EasyPxeServer/tftpboot/ts/all
 /src/FluentPxeServer/log.txt
 /src/FluentPxeServer/wwwroot/flexem/novnc
+*.iso

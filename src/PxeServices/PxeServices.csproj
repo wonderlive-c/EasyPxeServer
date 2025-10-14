@@ -16,7 +16,6 @@
 
 	<ItemGroup>
 	  <Folder Include="Entities\BootFile\" />
-	  <Folder Include="Entities\DhcpUser\" />
 	  <Folder Include="Entities\KickStart\" />
 	  <Folder Include="Entities\VncClient\" />
 	</ItemGroup>
