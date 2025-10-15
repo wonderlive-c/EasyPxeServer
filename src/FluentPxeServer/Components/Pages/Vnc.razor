@@ -2,6 +2,7 @@
 @using Microsoft.FluentUI.AspNetCore.Components
 @using Microsoft.FluentUI.AspNetCore.Components.Icons.Color
 @using PxeServices
+@using PxeServices.Entities.VncClient
 @inject VncService        VncService
 @inject IJSRuntime        JSRuntime
 @inject NavigationManager NavigationManager
@@ -10,8 +11,7 @@
 <PageTitle>VNC 控制台</PageTitle>
 
 <FluentStack HorizontalAlignment="HorizontalAlignment.Center" Spacing="24px" class="mt-6">
-    <FluentText Variant="TextVariants.Title1" Align="TextAlign.Center">VNC 控制台</FluentText>
-
+   
     <!-- 连接参数表单 -->
     <FluentCard Class="w-full max-w-4xl shadow-lg">
         <FluentCardHeader>

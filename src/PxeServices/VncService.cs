@@ -1,14 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using PxeServices.Entities.VncClient;
 
 namespace PxeServices
 {
     /// <summary>
     /// VNC连接服务，用于管理VNC连接状态和操作
     /// </summary>
-    public class VncService(ILogger<VncService> logger)
+    public class VncService(ILogger<VncService> logger, IServiceProvider serviceProvider)
     {
-        private readonly Dictionary<string, VncConnection> _connections = new();
-
         /// <summary>
         /// 创建VNC连接
         /// </summary>
@@ -22,29 +22,41 @@ namespace PxeServices
         {
             if (string.IsNullOrEmpty(connectionId)) { connectionId = Guid.NewGuid().ToString(); }
 
-            if (ConnectionExists(connectionId)) { return _connections[connectionId]; }
+            if (await ConnectionExists(connectionId)) { return await GetConnection(connectionId); }
 
             // 构建WebSocket URL
             var wsUrl = $"{scheme}://{host}:{port}/{path}?host={vncHost}&port={vncPort}&scale=true";
             logger.LogInformation("创建VNC连接: {wsUrl},{connectionId}", wsUrl, connectionId);
             // 保存连接信息
-            _connections[connectionId] = new VncConnection
+            var newConnection = new VncConnection
             {
-                ConnectionId = connectionId,
-                Host         = vncHost,
-                Port         = vncPort,
-                Password     = password,
-                WebSocketUrl = wsUrl,
-                IsConnected  = false
+                Id             = Guid.TryParse(connectionId, out var id) ? id : Guid.NewGuid(),
+                ConnectionName = "Connection-" + host + "-" + connectionId,
+                ConnectionId   = connectionId,
+                Host           = vncHost,
+                Port           = vncPort,
+                Password       = password,
+                WebSocketUrl   = wsUrl,
+                IsConnected    = false
             };
 
-            return _connections[connectionId];
+            using var scope      = serviceProvider.CreateScope();
+            var       repository = scope.ServiceProvider.GetRequiredService<IVncConnectionRepository>();
+            await repository.AddAsync(newConnection);
+
+            return newConnection;
         }
 
         public async Task<VncConnection?> GetConnection(string connectionId)
         {
-            logger.LogInformation("获取VNC连接: {connectionId}", connectionId);
-            return _connections.TryGetValue(connectionId, out var connection) ? connection : null;
+            if (Guid.TryParse(connectionId, out var guid))
+            {
+                using var scope      = serviceProvider.CreateScope();
+                var       repository = scope.ServiceProvider.GetRequiredService<IVncConnectionRepository>();
+                return await repository.GetAsync(guid);
+            }
+
+            return default;
         }
 
         /// <summary>
@@ -53,32 +65,37 @@ namespace PxeServices
         /// <param name="connectionId">连接ID</param>
         public async Task RemoveConnection(string connectionId)
         {
-            if (_connections.ContainsKey(connectionId)) { _connections.Remove(connectionId); }
+            if (Guid.TryParse(connectionId, out var guid))
+            {
+                using var scope      = serviceProvider.CreateScope();
+                var       repository = scope.ServiceProvider.GetRequiredService<IVncConnectionRepository>();
+                await repository.DeleteAsync(guid);
+            }
         }
 
         /// <summary>
         /// 获取所有活跃的VNC连接
         /// </summary>
-        public List<VncConnection> GetActiveConnections() { return [.._connections.Values]; }
+        public List<VncConnection> GetActiveConnections()
+        {
+            using var scope      = serviceProvider.CreateScope();
+            var       repository = scope.ServiceProvider.GetRequiredService<IVncConnectionRepository>();
+            return (repository.GetList()).ToList();
+        }
 
         /// <summary>
         /// 检查连接是否存在
         /// </summary>
-        public bool ConnectionExists(string connectionId) { return _connections.ContainsKey(connectionId); }
-    }
+        private async Task<bool> ConnectionExists(string connectionId)
+        {
+            if (Guid.TryParse(connectionId, out var guid))
+            {
+                using var scope      = serviceProvider.CreateScope();
+                var       repository = scope.ServiceProvider.GetRequiredService<IVncConnectionRepository>();
+                return await repository.ExistsAsync(guid);
+            }
 
-    /// <summary>
-    /// VNC连接信息类
-    /// </summary>
-    public class VncConnection
-    {
-        public string ConnectionName { get; set; }
-        public string ConnectionId   { get; set; }
-        public string Host           { get; set; }
-        public int    Port           { get; set; }
-        public string Password       { get; set; }
-        public string WebSocketUrl   { get; set; }
-        public bool   IsConnected    { get; set; }
-        public string DesktopName    { get; set; }
+            return false;
+        }
     }
 }

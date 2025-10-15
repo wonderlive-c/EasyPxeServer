@@ -2,6 +2,7 @@
 @using Microsoft.FluentUI.AspNetCore.Components
 @using Microsoft.FluentUI.AspNetCore.Components.Icons.Color
 @using PxeServices
+@using PxeServices.Entities.VncClient
 @inject VncService        VncService
 @inject IJSRuntime        JSRuntime
 @inject NavigationManager NavigationManager
@@ -80,7 +81,7 @@
         </FluentCardHeader>
         <FluentCardBody>
             <FluentForm @onsubmit="ConnectToVncServer">
-                <FluentGrid>                    
+                <FluentGrid>
                     <FluentGridItem Size="6">
                         <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
                             <FluentLabel For="host" Required="true">主机地址</FluentLabel>
@@ -140,8 +141,8 @@
                         <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
                             <FluentLabel For="screenSize">屏幕大小</FluentLabel>
                             <FluentSelect TOption="string"
-                                Id="screenSize"
-                                @bind-Value="ScreenSize">
+                                          Id="screenSize"
+                                          @bind-Value="ScreenSize">
                                 <FluentOption Value="800x600">800 x 600</FluentOption>
                                 <FluentOption Value="1024x768">1024 x 768</FluentOption>
                                 <FluentOption Value="1280x800">1280 x 800</FluentOption>
@@ -184,7 +185,7 @@
                         Type="ButtonType.Submit"
                         Appearance="Appearance.Accent"
                         Size="Size.Large">
-                        <FluentIcon Value="@(new Icons.Regular.Size24.Bookmark())" />
+                        <FluentIcon Value="@(new Icons.Regular.Size24.Bookmark())"/>
                         <span>连接VNC服务器</span>
                     </FluentButton>
                 </FluentStack>
@@ -204,29 +205,29 @@
                     <PropertyColumn
                         Title="连接名称"
                         Property="@(x => string.IsNullOrEmpty(x.ConnectionName) ? "未命名连接" : x.ConnectionName)"
-                        Sortable="true" />
+                        Sortable="true"/>
                     <PropertyColumn
                         Title="主机"
                         Property="@(x => x.Host)"
-                        Sortable="true" />
+                        Sortable="true"/>
                     <PropertyColumn
                         Title="端口"
                         Property="@(x => x.Port)"
-                        Sortable="true" />
+                        Sortable="true"/>
                     <TemplateColumn Title="操作">
                         <FluentButtonGroup>
                             <FluentButton
                                 Appearance="Appearance.Neutral"
                                 Size="Size.Small"
                                 @onclick="() => ReconnectConnection(context.ConnectionId)">
-                                <FluentIcon Value="@(new Size24.Reward())" Size="16" />
+                                <FluentIcon Value="@(new Size24.Reward())" Size="16"/>
                                 <span>重新连接</span>
                             </FluentButton>
                             <FluentButton
                                 Appearance="Appearance.Accent"
                                 Size="Size.Small"
                                 @onclick="() => RemoveConnection(context.ConnectionId)">
-                                <FluentIcon Value="@(new Size24.Reward())" Size="16" />
+                                <FluentIcon Value="@(new Size24.Reward())" Size="16"/>
                                 <span>断开连接</span>
                             </FluentButton>
                         </FluentButtonGroup>
@@ -254,7 +255,7 @@
                                     <FluentButton
                                         Appearance="Appearance.Accent"
                                         @onclick="() => QuickConnect(preset)">
-                                        <FluentIcon Value="@(new Icons.Filled.Size24.CubeQuick())" Size="16" />
+                                        <FluentIcon Value="@(new Icons.Filled.Size24.CubeQuick())" Size="16"/>
                                         <span>快速连接</span>
                                     </FluentButton>
                                 </FluentStack>
@@ -280,7 +281,7 @@
     private int    CustomHeight   { get; set; } = 720;
 
     // 活跃连接列表
-    private IQueryable<VncConnection> ActiveConnections { get; set; } 
+    private IQueryable<VncConnection> ActiveConnections { get; set; }
 
     // 连接预设
     private List<ConnectionPreset> ConnectionPresets { get; set; } =
@@ -303,10 +304,7 @@
 
     private void UpdateActiveConnections() { ActiveConnections = VncService.GetActiveConnections().AsQueryable(); }
 
-    private async Task ConnectToVncServer()
-    {
-        await ConnectToVncServer(Guid.NewGuid().ToString());
-    }
+    private async Task ConnectToVncServer() { await ConnectToVncServer(Guid.NewGuid().ToString()); }
 
     private async Task ConnectToVncServer(string? connectionId)
     {
@@ -327,8 +325,8 @@
             // 创建VNC连接
             var uri    = new Uri(NavigationManager.BaseUri);
             var scheme = uri.Scheme; // 结果："http" 或 "https"
-            var host = uri.Host; // 结果："localhost" 或 "www.example.com"
-            var port = uri.Port; // 结果：如 5000、8080，默认端口（80/443）可能为 null
+            var host   = uri.Host;   // 结果："localhost" 或 "www.example.com"
+            var port   = uri.Port;   // 结果：如 5000、8080，默认端口（80/443）可能为 null
             await VncService.CreateConnection(connectionId, scheme is "http" ? "ws" : "wss", host, port, Host, Port, Password, WebSocketPath);
 
             // 解析屏幕尺寸

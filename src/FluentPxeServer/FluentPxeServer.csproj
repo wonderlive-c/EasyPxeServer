@@ -11,6 +11,9 @@
 
 	<ItemGroup>
 	  <None Remove="log.txt" />
+	  <None Remove="pxe_storage_lite.db" />
+	  <None Remove="pxe_storage_lite.db-shm" />
+	  <None Remove="pxe_storage_lite.db-wal" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -29,6 +32,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\PxeServices\PxeServices.csproj" />
+		<ProjectReference Include="..\PxeStorageLite\PxeStorageLite.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -4,12 +4,12 @@
 //   Project Name        :    PxeServices
 //   Project Description :
 //   ===============================================================================
-//   File Name           :    IDhcpUserStorage.cs
+//   File Name           :    IVncConnectionRepository.cs
 //   File Version        :    v1.0.0.0
 //   File Description    :
 //   Author              :    wonderlive
-//   Create Time         :    2025-10-13 8:55
-//   Update Time         :    2025-10-13 8:55
+//   Create Time         :    2025-10-15 14:27
+//   Update Time         :    2025-10-15 14:27
 // 
 //   ===============================================================================
 //      _____  _____  / /_
@@ -20,9 +20,8 @@
 
 #endregion
 
-namespace PxeServices.Entities.Dhcp;
+namespace PxeServices.Entities.VncClient;
 
-public interface IDhcpUserStorage
+public interface IVncConnectionRepository : IRepository<Guid, VncConnection>
 {
-
 }

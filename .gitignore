@@ -366,3 +366,6 @@ FodyWeavers.xsd
 /src/FluentPxeServer/log.txt
 /src/FluentPxeServer/wwwroot/flexem/novnc
 *.iso
+/src/FluentPxeServer/pxe_storage_lite.db
+/src/FluentPxeServer/pxe_storage_lite.db-shm
+/src/FluentPxeServer/pxe_storage_lite.db-wal

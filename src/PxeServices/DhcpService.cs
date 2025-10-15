@@ -3,19 +3,21 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using DotNetProjects.DhcpServer;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using PxeServices.Entities.Dhcp;
+using PxeStorageLite;
 
 namespace PxeServices
 {
     // 在关键操作和分支处增加详细日志，便于调试
-    public class DhcpService(ILogger<DhcpService> logger) :IHostedService
+    public class DhcpService(ILogger<DhcpService> logger, IServiceProvider serviceProvider) : IHostedService
     {
         private CancellationTokenSource? _cancellationTokenSource;
 
-        static  byte                          nextIP = 10;
-        static  Dictionary<string, IPAddress> leases = new();
-        private DHCPServer?                   dhcpServer;
+        static  byte        nextIP = 10;
+        private DHCPServer? dhcpServer;
 
         public bool   IsRunning           => dhcpServer != null;
         public string BootFileName        { get; set; } = "menu.txt";
@@ -47,63 +49,31 @@ namespace PxeServices
             dhcpServer.Start();
         }
 
-        private void Request(DHCPRequest dhcpRequest)
+        private async void Request(DHCPRequest dhcpRequest)
         {
-            var op = new DHCPReplyOptions
-            {
-                SubnetMask            = IPAddress.Parse("255.255.0.0"),
-                ServerIpAddress       = IPAddress.Parse("10.10.10.254"),
-                IPAddressLeaseTime    = 0,
-                RenewalTimeValue_T1   = 3600,
-                RebindingTimeValue_T2 = 7200,
-                DomainName            = "8.8.8.8",
-                ServerIdentifier      = IPAddress.Parse("10.10.10.254"),
-                RouterIP              = IPAddress.Parse("0.0.0.0"),
-                DomainNameServers = new IPAddress[]
-                {
-                },
-                OtherRequestedOptions = []
-            };
-
             try
             {
                 var type = dhcpRequest.GetMsgType();
                 var mac  = ByteArrayToString(dhcpRequest.GetChaddr());
 
                 logger.LogInformation("收到DHCP请求，来自: {RemoteEndPoint}", mac);
+                DebugRequest(dhcpRequest);
 
-                // IP for client
-                IPAddress ip;
-                if (!leases.TryGetValue(mac, out ip))
-                {
-                    ip          = new IPAddress([10, 10, 10, nextIP++]);
-                    leases[mac] = ip;
-                }
+                using var scope              = serviceProvider.CreateScope();
+                var       dhcpUserRepository = scope.ServiceProvider.GetRequiredService<IDhcpUserRepository>();
+                var existsDhcpUser = await dhcpUserRepository.GetByMacAddressOrCreate(mac,
+                                                                                      user =>
+                                                                                      {
+                                                                                          var ipAddress = new IPAddress([10, 10, 10, nextIP++]);
+                                                                                          user.IpAddress    = ipAddress;
+                                                                                          user.MacAddress   = mac;
+                                                                                          user.IsAuthorized = true;
+                                                                                          user.IsEnabled    = true;
+                                                                                      });
 
-                logger.LogInformation("{type} request from {mac}, it will be {ip}", type, mac, ip);
 
-                var options = dhcpRequest.GetAllOptions();
-                logger.LogInformation("Options:");
-                foreach (DHCPOption option in options.Keys) { logger.LogInformation("{name}:{value}", option, ByteArrayToString(options[option])); }
+                logger.LogInformation("{type} request from {mac}, it will be {ip}", type, mac, existsDhcpUser!.IpAddress);
 
-                // Lets show some request info
-                var requestedOptions = dhcpRequest.GetRequestedOptionsList();
-                if (requestedOptions != null)
-                {
-                    logger.LogInformation("Requested options:");
-                    foreach (DHCPOption option in requestedOptions) logger.LogInformation(" " + option.ToString());
-                }
-
-                // Option 82 info
-                var relayInfoN = dhcpRequest.GetRelayInfo();
-                if (relayInfoN != null)
-                {
-                    var relayInfo = (RelayInfo)relayInfoN;
-                    if (relayInfo.AgentCircuitID != null)
-                        logger.LogInformation("Relay agent circuit ID: " + ByteArrayToString(relayInfo.AgentCircuitID));
-                    if (relayInfo.AgentRemoteID != null)
-                        logger.LogInformation("Relay agent remote ID: " + ByteArrayToString(relayInfo.AgentRemoteID));
-                }
 
                 var replyOptions = new DHCPReplyOptions();
                 // Options should be filled with valid data. Only requested options will be sent.
@@ -125,14 +95,40 @@ namespace PxeServices
                 {
                     // Lets send reply to client!
                     case DHCPMsgType.DHCPDISCOVER:
-                        dhcpRequest.SendDHCPReply(DHCPMsgType.DHCPOFFER, ip, replyOptions);
+                        dhcpRequest.SendDHCPReply(DHCPMsgType.DHCPOFFER, existsDhcpUser.IpAddress, replyOptions);
                         break;
                     case DHCPMsgType.DHCPREQUEST:
-                        dhcpRequest.SendDHCPReply(DHCPMsgType.DHCPACK, ip, replyOptions);
+                        dhcpRequest.SendDHCPReply(DHCPMsgType.DHCPACK, existsDhcpUser.IpAddress, replyOptions);
                         break;
                 }
             }
-            catch (Exception ex) { Console.WriteLine(ex); }
+            catch (Exception ex) { logger.LogError(ex, "处理DHCP请求时出错"); }
+        }
+
+        private void DebugRequest(DHCPRequest dhcpRequest)
+        {
+            // Lets show some request info
+            var requestedOptions = dhcpRequest.GetRequestedOptionsList();
+            if (requestedOptions != null)
+            {
+                logger.LogInformation("Requested options:");
+                foreach (var option in requestedOptions) logger.LogInformation(" " + option.ToString());
+            }
+
+            // Option 82 info
+            var relayInfoN = dhcpRequest.GetRelayInfo();
+            if (relayInfoN != null)
+            {
+                var relayInfo = (RelayInfo)relayInfoN;
+                if (relayInfo.AgentCircuitID != null)
+                    logger.LogInformation("Relay agent circuit ID: " + ByteArrayToString(relayInfo.AgentCircuitID));
+                if (relayInfo.AgentRemoteID != null)
+                    logger.LogInformation("Relay agent remote ID: " + ByteArrayToString(relayInfo.AgentRemoteID));
+            }
+
+            var options = dhcpRequest.GetAllOptions();
+            logger.LogInformation("Options:");
+            foreach (var option in options.Keys) { logger.LogInformation("{name}:{value}", option, ByteArrayToString(options[option])); }
         }
 
         private static string ByteArrayToString(byte[] ar) { return BitConverter.ToString(ar); }
