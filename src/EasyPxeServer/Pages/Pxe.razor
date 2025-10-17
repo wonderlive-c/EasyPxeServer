@@ -70,7 +70,7 @@
                             <FluentLabel For="bootFileName">启动文件名</FluentLabel>
                             <FluentTextField
                                 Id="bootFileName"
-                                @bind-Value="DhcpService.BootFileName"
+                                Value="@DhcpService.BootFileName"
                                 Placeholder="pxeboot.0"
                                 Disabled="@PxeServerService.IsRunning"/>
                         </FluentStack>

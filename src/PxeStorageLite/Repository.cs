@@ -7,6 +7,8 @@ public abstract class Repository<TKey, T>(IDbContextFactory<PxeDbContext> factor
 {
     protected PxeDbContext DbContext { get; } = factory.CreateDbContext();
 
+    public IQueryable<T> Queryable => DbContext.Set<T>();
+
     public async Task<T> AddAsync(T entity)
     {
         DbContext.Add(entity);

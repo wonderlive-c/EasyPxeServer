@@ -4,7 +4,7 @@ using System.Net;
 
 namespace PxeStorageLite;
 
-public class DhcpUser : IEntity<Guid>
+public class DhcpUser : Entity<Guid>
 {
     public bool IsEnabled    { get; set; }
     public bool IsSuperUser  { get; set; }

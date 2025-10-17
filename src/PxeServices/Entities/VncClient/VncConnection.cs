@@ -27,7 +27,7 @@ namespace PxeServices.Entities.VncClient;
 /// <summary>
 /// VNC连接信息类
 /// </summary>
-public class VncConnection : IEntity<Guid>
+public class VncConnection : Entity<Guid>
 {
     [MaxLength(32)]
     public string ConnectionName { get; set; }
@@ -53,7 +53,7 @@ public class VncConnection : IEntity<Guid>
 
     #region Implementation of IEntity<Guid>
 
-    public Guid Id { get; set; }
+    public override Guid Id { get; set; } = Guid.NewGuid();
 
     #endregion
 }

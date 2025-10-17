@@ -9,7 +9,10 @@
         <FluentNavMenu Id="main-menu" Collapsible="true" Width="250" Title="Navigation menu" @bind-Expanded="expanded" CustomToggle="true">
             <FluentNavLink Href="/" Match="NavLinkMatch.All" Icon="@(new Icons.Regular.Size20.Home())" IconColor="Color.Accent">首页</FluentNavLink>
             <FluentNavLink Href="/pxe" Icon="@(new Icons.Regular.Size20.NumberSymbolSquare())" IconColor="Color.Accent">PXE服务器</FluentNavLink>
-            <FluentNavLink Href="/OsImages" Icon="@(new Icons.Regular.Size20.Image())" IconColor="Color.Accent">ISO镜像</FluentNavLink>
+            <FluentNavLink Href="/dhcp" Icon="@(new Icons.Regular.Size20.Server())" IconColor="Color.Accent">DHCP服务</FluentNavLink>
+            <FluentNavLink Href="/tftp" Icon="@(new Icons.Regular.Size20.Document())" IconColor="Color.Accent">TFTP服务</FluentNavLink>
+            <FluentNavLink Href="/kickstart" Icon="@(new Icons.Regular.Size20.MeetNow())" IconColor="Color.Accent">启动菜单</FluentNavLink>
+            <FluentNavLink Href="/iso" Icon="@(new Icons.Regular.Size20.Image())" IconColor="Color.Accent">系统镜像</FluentNavLink>
             <FluentNavLink Href="/vnc" Icon="@(new Icons.Regular.Size20.WeatherPartlyCloudyDay())" IconColor="Color.Accent">VNC控制台</FluentNavLink>
         </FluentNavMenu>
     </nav>

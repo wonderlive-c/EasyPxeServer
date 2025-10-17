@@ -1,16 +1,32 @@
-﻿@using System.Runtime.InteropServices
-@using System.Reflection
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 @inject IAppVersionService AppVersionService
+<style>
+    .header-container {
+        display: flex;
+        align-items: center; /* 垂直居中对齐 */
+        gap: 1px; /* 两个元素之间的间距 */
+    }
 
-@inject NavigationManager  NavigationManager
+    .logo img {
+        /* 根据需要设置图片大小 */
+        width: 40px;
+        height: 40px;
+    }
 
+    h1 {
+        margin: 0; /* 去除默认外边距 */
+        font-size: 1.5rem;
+    }
+</style>
 <div>
     <FluentLayout>
         <FluentHeader Class="siteheader">
             <a href="/" aria-label="Back to the homepage">
-                <div class="logo" role="presentation" aria-hidden="true" itemprop="logo" itemscope="itemscope">
-                    <img src="favicon.png" alt=""/>
+                <div class="header-container">
+                    <div class="logo" role="presentation" aria-hidden="true" itemprop="logo" itemscope="itemscope">
+                        <img src="favicon.png" alt=""/>
+                    </div>
+                    <h1>PXE Server & VNC Console</h1>
                 </div>
             </a>
             <FluentSpacer/>

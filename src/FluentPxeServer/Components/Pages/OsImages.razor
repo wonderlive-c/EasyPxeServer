@@ -1,15 +1,13 @@
-﻿@page "/OsImages"
+﻿@page "/iso"
 @using System.IO
 @using PxeServices
-@inject IWebHostEnvironment Env
+@inject NavigationManager NavigationManager 
 
 <PageTitle>ISO镜像管理</PageTitle>
 <FluentCard Style="padding: 24px; max-width: 900px; margin: auto;">
     <FluentStack HorizontalAlign="HorizontalAlignment.Center">
-        <FluentText Variant="TextVariant.Large">ISO 文件列表</FluentText>
         <FluentButton Id="MyUploadButton" IconName="Upload">上传ISO</FluentButton>
-        <FluentInputFile @ref="@fileInput"
-                         DragDropZoneVisible="false"
+        <FluentInputFile DragDropZoneVisible="true"
                          Mode="InputFileMode.Stream"
                          Multiple="true"
                          AnchorId="MyUploadButton"
@@ -51,7 +49,6 @@
 
 @code {
     private IQueryable<IsoFileInfo> isoFiles;
-    private FluentInputFile         fileInput;
     private long                    maxFileSize = long.MaxValue;
 
     async Task OnFileUploadedAsync(FluentInputFileEventArgs file)
@@ -67,7 +64,10 @@
         LoadIsoFiles();
     }
 
-    protected override void OnInitialized() { LoadIsoFiles(); }
+    protected override void OnInitialized()
+    {
+        LoadIsoFiles(); 
+    }
 
     private void LoadIsoFiles()
     {
@@ -99,11 +99,10 @@
     private async Task DeleteIsoAsync(string fileName)
     {
         var filePath = Path.Combine(ConstSetting.ISO_ROOT, fileName);
-        if (System.IO.File.Exists(filePath))
+        if (File.Exists(filePath))
         {
-            System.IO.File.Delete(filePath);
+            File.Delete(filePath);
             LoadIsoFiles();
-            StateHasChanged();
         }
     }
 
@@ -114,10 +113,5 @@
         public DateTime LastWriteTime { get; set; }
     }
 
-    [Inject]
-    private IJSRuntime JS { get; set; } = default!;
-
-    [Inject]
-    private NavigationManager NavigationManager { get; set; } = default!;
 
 }

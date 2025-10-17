@@ -5,23 +5,19 @@
 @inject IToastService    ToastService
 @inject IDialogService   DialogService
 @using PxeServices
-@using System.Reflection.PortableExecutable
+@using System.Drawing
 
 
 <PageTitle>PXE服务器管理</PageTitle>
 
 <FluentStack Orientation="Orientation.Vertical">
 
-    <FluentCard MinimalStyle="true">
-        <FluentCardHeader>
-            <FluentText Variant="TextVariants.Title3">服务器状态</FluentText>
-        </FluentCardHeader>
-        <FluentCardBody>
+    <FluentCard>
             <FluentGrid>
                 <FluentGridItem Size="4">
                     <FluentStack Orientation="Orientation.Horizontal">
                         <FluentText>当前状态：</FluentText>
-                        <FluentBadge Appearance="@(PxeServerService.IsRunning ? Appearance.Accent : Appearance.Neutral)">
+                    <FluentBadge Appearance="@(PxeServerService.IsRunning? Appearance.Accent: Appearance.Neutral)" BackgroundColor="@(PxeServerService.IsRunning? "Green": "Red")">
                             @(PxeServerService.IsRunning ? "运行中" : "已停止")
                         </FluentBadge>
                     </FluentStack>
@@ -46,7 +42,6 @@
                     </FluentButtonGroup>
                 </FluentGridItem>
             </FluentGrid>
-        </FluentCardBody>
     </FluentCard>
 
 
@@ -76,7 +71,7 @@
                                 <FluentLabel For="bootFileName">启动文件名</FluentLabel>
                                 <FluentTextField
                                     Id="bootFileName"
-                                    @bind-Value="DhcpService.BootFileName"
+                                    Value="@DhcpService.BootFileName"
                                     Placeholder="pxeboot.0"
                                     Disabled="@PxeServerService.IsRunning"/>
                             </FluentStack>
@@ -106,7 +101,6 @@
                                 <FluentLabel>状态</FluentLabel>
                                 <FluentStack Orientation="Orientation.Vertical">
                                     <FluentText>TFTP服务器：@(TftpService.IsRunning ? "运行中" : "已停止")</FluentText>
-                                    <FluentText>文件数量：@TftpFiles.Count()</FluentText>
                                 </FluentStack>
                             </FluentStack>
                         </FluentStack>
@@ -116,79 +110,13 @@
         </FluentCardBody>
     </FluentCard>
 
-    <!-- TFTP文件管理 -->
-    <FluentCard class="mt-4">
-        <FluentCardHeader>
-            <FluentText Variant="TextVariants.Title3">TFTP文件管理</FluentText>
-        </FluentCardHeader>
-        <FluentCardBody>
-            <FluentStack Spacing="16px" Orientation="Orientation.Vertical">
-                <FluentStack Orientation="Orientation.Horizontal" Spacing="8px">
-                    <FluentButton Appearance="Appearance.Accent" @onclick="ShowUploadModal">
-                        <FluentIcon Value="@(new Icons.Filled.Size24.Add())"/>
-                        <span>上传文件</span>
-                    </FluentButton>
-                    <FluentButton Appearance="Appearance.Neutral" @onclick="RefreshFileList">
-                        <FluentIcon Value="@(new Icons.Filled.Size24.New())"/>
-                        <span>刷新列表</span>
-                    </FluentButton>
-                </FluentStack>
-
-                <FluentDataGrid Items="@TftpFiles" Sortable="true" AutoFit="false">
-                    <PropertyColumn Title="文件名"
-                                    Property="@(x => x.Name)"
-                                    Sortable="true"/>
-                    <PropertyColumn Title="大小"
-                                    Property="@(x => x.FormattedSize)"
-                                    Sortable="true"/>
-                    <PropertyColumn Title="修改日期"
-                                    Property="@(x => x.LastModified.ToString("yyyy-MM-dd HH:mm:ss"))"
-                                    Sortable="true"/>
-                    <TemplateColumn Title="操作">
-                        <FluentButton
-                            Appearance="Appearance.Neutral"
-                            Size="Size.Small"
-                            @onclick="() => DeleteFile(context.Name)"
-                            Disabled="@PxeServerService.IsRunning">
-                            <FluentIcon Value="@(new Icons.Filled.Size24.Delete())"/>
-                        </FluentButton>
-                    </TemplateColumn>
-                </FluentDataGrid>
-            </FluentStack>
-        </FluentCardBody>
-    </FluentCard>
 
 </FluentStack>
-<!-- 上传文件对话框 -->
-<FluentDialog Hidden="@ShowUploadModalFlag">
-    <FluentDialogHeader>
-        <FluentDialogTitle>上传文件到TFTP目录</FluentDialogTitle>
-    </FluentDialogHeader>
-    <FluentDialogBody>
-        <InputFile OnChange="HandleFileSelection" class="w-full"/>
-    </FluentDialogBody>
-    <FluentDialogFooter>
-        <FluentButtonGroup>
-            <FluentButton Appearance="Appearance.Neutral" @onclick="HideUploadModal">取消</FluentButton>
-            <FluentButton
-                Appearance="Appearance.Accent"
-                @onclick="UploadFileAsync"
-                Disabled="@(SelectedFile == null || Uploading)">
-                @(Uploading ? "上传中..." : "上传")
-            </FluentButton>
-        </FluentButtonGroup>
-    </FluentDialogFooter>
-</FluentDialog>
-<FluentDialogProvider/>
 
 @code {
 
     private List<NetworkInterfaceInfo> NetworkInterfaces   { get; set; } = [];
-    private IQueryable<TftpFileInfo>   TftpFiles           { get; set; }
     private string?                    SelectedInterfaceIp { get; set; }
-    private bool                       ShowUploadModalFlag { get; set; } = true;
-    private IBrowserFile?              SelectedFile        { get; set; }
-    private bool                       Uploading           { get; set; } = false;
 
     protected override void OnInitialized()
     {
@@ -196,8 +124,6 @@
         NetworkInterfaces = PxeServerService.GetNetworkInterfaces();
         if (string.IsNullOrEmpty(SelectedInterfaceIp)) { SelectedInterfaceIp = NetworkInterfaces.FirstOrDefault()?.IPAddress; }
 
-        // 获取TFTP文件列表
-        RefreshFileList();
         // 监听状态变化
         PxeServerService.StatusChanged += delegate { InvokeAsync(StateHasChanged); };
     }
@@ -251,74 +177,6 @@
             ToastService.ShowSuccess("PXE服务器已成功重启");
         }
         catch (Exception ex) { ToastService.ShowError("重启服务器失败：" + ex.Message, 3000); }
-    }
-
-    private void RefreshFileList() { TftpFiles = TftpService.GetFiles().AsQueryable(); }
-
-    private void ShowUploadModal()
-    {
-        ShowUploadModalFlag = false;
-        SelectedFile        = null;
-    }
-
-    private void HideUploadModal()
-    {
-        ShowUploadModalFlag = true;
-        SelectedFile        = null;
-    }
-
-    private void HandleFileSelection(InputFileChangeEventArgs e) { SelectedFile = e.File; }
-
-    private async Task UploadFileAsync()
-    {
-        if (SelectedFile == null)
-            return;
-
-        try
-        {
-            Uploading = true;
-            await using var stream  = SelectedFile.OpenReadStream(long.MaxValue);
-            var             success = await TftpService.UploadFileAsync(SelectedFile.Name, stream);
-            if (success)
-            {
-                ToastService.ShowSuccess("文件上传成功");
-                RefreshFileList();
-                HideUploadModal();
-            }
-            else { ToastService.ShowError("文件上传失败", 3000); }
-        }
-        catch (Exception ex) { ToastService.ShowError("文件上传失败：" + ex.Message, 3000); }
-        finally { Uploading = false; }
-    }
-
-    private async Task DeleteFile(string fileName)
-    {
-        var dialogInstance = await DialogService.ShowDialogAsync(@<div>
-                                                                     <p> 确定要删除文件: @fileName ? </p>
-                                                                 </div>,
-                                                                 new DialogParameters
-                                                                 {
-                                                                     Title = $"提示", TrapFocus = false, DialogType = DialogType.MessageBox, Modal = true
-                                                                 });
-
-
-        try
-        {
-            var result = await dialogInstance.Result;
-
-            if (result.Cancelled == false)
-            {
-                var success = TftpService.DeleteFile(fileName);
-                if (success)
-                {
-                    RefreshFileList();
-                    ToastService.ShowSuccess("文件删除成功");
-                }
-                else { ToastService.ShowError("文件删除失败", 3000); }
-            }
-        }
-        catch (Exception ex) { ToastService.ShowSuccess("删除文件失败：" + ex.Message, 3000); }
-        finally { await dialogInstance.CloseAsync(); }
     }
 
     public void Dispose() { PxeServerService.StatusChanged -= StateHasChanged; }

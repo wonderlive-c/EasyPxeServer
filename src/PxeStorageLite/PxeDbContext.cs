@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Options;
+using PxeServices.Entities.Settings;
 using PxeServices.Entities.VncClient;
 
 namespace PxeStorageLite;
@@ -9,6 +10,7 @@ public class PxeDbContext(DbContextOptions<PxeDbContext> options) : DbContext(op
 {
     public             DbSet<DhcpUser>      DhcpUsers                                             { get; set; }
     public             DbSet<VncConnection> VncConnections                                        { get; set; }
+    public             DbSet<ObjectSetting> ObjectSettings                                        { get; set; }
     protected override void                 OnConfiguring(DbContextOptionsBuilder optionsBuilder) { optionsBuilder.UseSqlite("Data Source=pxe_storage_lite.db"); }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -52,6 +54,14 @@ public class PxeDbContext(DbContextOptions<PxeDbContext> options) : DbContext(op
             entity.Property(e => e.WebSocketUrl).IsRequired();
             entity.Property(e => e.IsConnected).IsRequired();
             entity.Property(e => e.ConnectionId).IsRequired(false);
+        });
+        modelBuilder.Entity<ObjectSetting>(entity =>
+        {
+            entity.ToTable("ObjectSettings");
+            entity.HasKey(e => e.Id);
+            entity.HasAlternateKey(e => e.Name);
+            entity.Property(e => e.Name).IsRequired();
+            entity.Property(e => e.Value).IsRequired();
         });
     }
 }

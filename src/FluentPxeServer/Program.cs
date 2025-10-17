@@ -7,6 +7,8 @@ using Microsoft.FluentUI.AspNetCore.Components;
 using PxeServices;
 using PxeStorageLite;
 using Serilog;
+using System.Text.Json.Serialization.Metadata;
+using PxeServices.Entities.Settings;
 
 namespace FluentPxeServer
 {
@@ -27,12 +29,17 @@ namespace FluentPxeServer
             builder.Services.AddFluentUIComponents();
             builder.Services.AddFluentUIServerServices();
             builder.Logging.AddSerilog();
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddJsonOptions(options =>options.JsonSerializerOptions.Converters.Add(new IPAddressJsonConverter()));
             builder.Services.AddSingleton<DhcpService>();
             builder.Services.AddSingleton<TftpService>();
             builder.Services.AddSingleton<PxeServerService>();
             builder.Services.AddSingleton<VncService>();
             builder.Services.ConfigureDhcpUserStorage();
+            builder.Services.ConfigureHttpJsonOptions(options =>
+            {
+                options.SerializerOptions.Converters.Add(new IPAddressJsonConverter());
+            });
+            builder.Services.AddSignalR();
 
             var app = builder.Build();
             using (var scope = app.Services.CreateScope())
@@ -51,7 +58,7 @@ namespace FluentPxeServer
                 }
                 catch (Exception e) { Log.Error(e, "Error creating database"); }
             }
-
+            
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {

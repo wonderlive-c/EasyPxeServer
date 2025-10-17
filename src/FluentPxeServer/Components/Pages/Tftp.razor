@@ -1,0 +1,174 @@
+﻿@page "/tftp"
+@using PxeServices
+@inject TftpService      TftpService
+@inject IToastService    ToastService
+@inject IDialogService   DialogService
+@inject PxeServerService PxeServerService
+
+<PageTitle>TFTP服务</PageTitle>
+
+<FluentStack>
+    <!-- TFTP文件管理 -->
+    <FluentCard class="mt-4">
+        <FluentCardHeader>
+            <FluentText Variant="TextVariants.Title3">TFTP文件管理</FluentText>
+        </FluentCardHeader>
+        <FluentCardBody>
+            <FluentStack Spacing="16px" Orientation="Orientation.Vertical">
+                <FluentStack Orientation="Orientation.Horizontal" Spacing="8px">
+                    <FluentButton  @onclick="ShowUploadModal">
+                        <span>上传文件</span>
+                    </FluentButton>
+                    <FluentButton  @onclick="RefreshFileList">
+                        <span>刷新列表</span>
+                    </FluentButton>
+                </FluentStack>
+
+                <FluentDataGrid Items="@TftpFiles" Sortable="true" AutoFit="false">
+                    <PropertyColumn Title="文件名"
+                                    Property="@(x => x.Name)"
+                                    Sortable="true"/>
+                    <PropertyColumn Title="大小"
+                                    Property="@(x => x.FormattedSize)"
+                                    Sortable="true"/>
+                    <PropertyColumn Title="修改日期"
+                                    Property="@(x => x.LastModified.ToString("yyyy-MM-dd HH:mm:ss"))"
+                                    Sortable="true"/>
+                    <TemplateColumn Title="操作">
+                        <FluentButton
+                            Appearance="Appearance.Neutral"
+                            Size="Size.Small"
+                            @onclick="() => DeleteFile(context.Name)"
+                            Disabled="@PxeServerService.IsRunning">
+                            <FluentIcon Value="@(new Icons.Filled.Size24.Delete())"/>
+                        </FluentButton>
+                    </TemplateColumn>
+                </FluentDataGrid>
+            </FluentStack>
+        </FluentCardBody>
+    </FluentCard>
+
+    <!-- 上传文件对话框 -->
+    <FluentDialog Hidden="@ShowUploadModalFlag">
+        <FluentDialogHeader>
+            <FluentDialogTitle>上传文件到TFTP目录</FluentDialogTitle>
+        </FluentDialogHeader>
+        <FluentDialogBody>
+            <InputFile OnChange="HandleFileSelection" class="w-full"/>
+        </FluentDialogBody>
+        <FluentDialogFooter>
+            <FluentButtonGroup>
+                <FluentButton Appearance="Appearance.Neutral" @onclick="HideUploadModal">取消</FluentButton>
+                <FluentButton
+                    Appearance="Appearance.Accent"
+                    @onclick="UploadFileAsync"
+                    Disabled="@(SelectedFile == null || Uploading)">
+                    @(Uploading ? "上传中..." : "上传")
+                </FluentButton>
+            </FluentButtonGroup>
+        </FluentDialogFooter>
+    </FluentDialog>
+    <FluentDialogProvider/>
+</FluentStack>
+
+@code {
+
+    #region Overrides of ComponentBase
+
+    /// <summary>
+    /// Method invoked when the component is ready to start, having received its
+    /// initial parameters from its parent in the render tree.
+    /// Override this method if you will perform an asynchronous operation and
+    /// want the component to refresh when that operation is completed.
+    /// </summary>
+    /// <returns>A <see cref="T:System.Threading.Tasks.Task" /> representing any asynchronous operation.</returns>
+    protected override Task OnInitializedAsync()
+    {
+        // 获取TFTP文件列表
+        return RefreshFileList();
+    }
+
+    #endregion
+
+    private IQueryable<TftpFileInfo> TftpFiles           { get; set; }
+    private bool                     ShowUploadModalFlag { get; set; } = true;
+    private IBrowserFile?            SelectedFile        { get; set; }
+    private bool                     Uploading           { get; set; } = false;
+
+    private Task RefreshFileList()
+    {
+        TftpFiles = TftpService.GetFiles().AsQueryable();
+        return Task.CompletedTask;
+    }
+
+    private void ShowUploadModal()
+    {
+        ShowUploadModalFlag = false;
+        SelectedFile        = null;
+    }
+
+    private void HideUploadModal()
+    {
+        ShowUploadModalFlag = true;
+        SelectedFile        = null;
+    }
+
+    private void HandleFileSelection(InputFileChangeEventArgs e) { SelectedFile = e.File; }
+
+    private async Task UploadFileAsync()
+    {
+        if (SelectedFile == null)
+            return;
+
+        try
+        {
+            Uploading = true;
+            await using var stream  = SelectedFile.OpenReadStream(long.MaxValue);
+            var             success = await TftpService.UploadFileAsync(SelectedFile.Name, stream);
+            if (success)
+            {
+                ToastService.ShowSuccess("文件上传成功");
+                await RefreshFileList();
+                HideUploadModal();
+            }
+            else { ToastService.ShowError("文件上传失败", 3000); }
+        }
+        catch (Exception ex) { ToastService.ShowError("文件上传失败：" + ex.Message, 3000); }
+        finally { Uploading = false; }
+    }
+
+    private async Task DeleteFile(string fileName)
+    {
+        var dialogInstance = await DialogService.ShowDialogAsync(@<div>
+                                                                     <p> 确定要删除文件: @fileName ? </p>
+                                                                 </div>,
+                                                                 new DialogParameters
+                                                                 {
+                                                                     Title      = $"提示",
+                                                                     TrapFocus  = false,
+                                                                     DialogType = DialogType.MessageBox,
+                                                                     Modal      = true
+                                                                 });
+
+
+        try
+        {
+            var result = await dialogInstance.Result;
+
+            if (result.Cancelled == false)
+            {
+                var success = TftpService.DeleteFile(fileName);
+                if (success)
+                {
+                    await RefreshFileList();
+                    ToastService.ShowSuccess("文件删除成功");
+                }
+                else { ToastService.ShowError("文件删除失败", 3000); }
+            }
+        }
+        catch (Exception ex) { ToastService.ShowSuccess("删除文件失败：" + ex.Message, 3000); }
+        finally { await dialogInstance.CloseAsync(); }
+    }
+
+
+}

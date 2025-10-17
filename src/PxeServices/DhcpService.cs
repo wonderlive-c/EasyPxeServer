@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PxeServices.Entities.Dhcp;
+using PxeServices.Entities.Settings;
 using PxeStorageLite;
 
 namespace PxeServices
@@ -16,13 +17,13 @@ namespace PxeServices
     {
         private CancellationTokenSource? _cancellationTokenSource;
 
-        static  byte        nextIP = 10;
-        private DHCPServer? dhcpServer;
+        static  byte         nextIP = 10;
+        private DHCPServer?  dhcpServer;
+        private DhcpSetting? dhcp;
 
         public bool   IsRunning           => dhcpServer != null;
-        public string BootFileName        { get; set; } = "menu.txt";
+        public string BootFileName        => dhcp?.BootFile;
         public string NextServerIp        { get; set; } = "";
-        public string RouterIp            { get; set; } = "";
         public string SelectedInterfaceIp { get; set; } = "";
 
 
@@ -41,10 +42,15 @@ namespace PxeServices
 
             logger.LogInformation("SelectedInterfaceIp {Name}",            SelectedInterfaceIp);
             logger.LogInformation("SendDhcpAnswerNetworkInterface {Name}", eth0If?.Name);
+
+            using var scope = serviceProvider.CreateScope();
+            var       repo  = scope.ServiceProvider.GetRequiredService<IObjectSettingRepository>();
+            dhcp = repo.GetObjectSetting<DhcpSetting>() ?? DhcpSetting.Default;
+
             dhcpServer                                =  new DHCPServer(IPAddress.Parse(SelectedInterfaceIp));
-            dhcpServer.ServerName                     =  "SharpDHCPServer";
+            dhcpServer.ServerName                     =  dhcp.ServerName;
             dhcpServer.OnDataReceived                 += Request;
-            dhcpServer.BroadcastAddress               =  IPAddress.Broadcast;
+            dhcpServer.BroadcastAddress               =  dhcp.Broadcast;
             dhcpServer.SendDhcpAnswerNetworkInterface =  eth0If;
             dhcpServer.Start();
         }
@@ -64,7 +70,7 @@ namespace PxeServices
                 var existsDhcpUser = await dhcpUserRepository.GetByMacAddressOrCreate(mac,
                                                                                       user =>
                                                                                       {
-                                                                                          var ipAddress = new IPAddress([10, 10, 10, nextIP++]);
+                                                                                          var ipAddress = dhcp!.NextAddress();
                                                                                           user.IpAddress    = ipAddress;
                                                                                           user.MacAddress   = mac;
                                                                                           user.IsAuthorized = true;
@@ -77,18 +83,18 @@ namespace PxeServices
 
                 var replyOptions = new DHCPReplyOptions();
                 // Options should be filled with valid data. Only requested options will be sent.
-                replyOptions.SubnetMask        = IPAddress.Parse("255.255.0.0");
-                replyOptions.DomainName        = "PXE-DHCPServer";
-                replyOptions.ServerIdentifier  = IPAddress.Parse(NextServerIp);
-                replyOptions.RouterIP          = IPAddress.Parse("0.0.0.0");
-                replyOptions.DomainNameServers = [IPAddress.Parse("8.8.8.8")];
-                replyOptions.ServerIpAddress   = IPAddress.Parse(NextServerIp);
+                replyOptions.SubnetMask        = dhcp!.DhcpSubnetMask;
+                replyOptions.DomainName        = dhcp!.DomainName;
+                replyOptions.ServerIdentifier  = dhcp!.ServerIdentifier;
+                replyOptions.RouterIP          = dhcp!.DhcpGateway;
+                replyOptions.DomainNameServers = dhcp!.DomainNameServers;
+                replyOptions.ServerIpAddress   = dhcp!.ServerIpAddress;
                 // Some static routes
                 replyOptions.StaticRoutes = [];
 
-                replyOptions.OtherRequestedOptions.Add(DHCPOption.BroadcastAddress, (IPAddress.TryParse("10.10.255.255", out var b) ? b : IPAddress.Broadcast).GetAddressBytes());
-                replyOptions.OtherRequestedOptions.Add(DHCPOption.TFTPServerName,   Encoding.UTF8.GetBytes(SelectedInterfaceIp));
-                replyOptions.OtherRequestedOptions.Add(DHCPOption.BootfileName,     "menu.txt"u8.ToArray());
+                replyOptions.OtherRequestedOptions.Add(DHCPOption.BroadcastAddress, dhcp.Broadcast.GetAddressBytes());
+                replyOptions.OtherRequestedOptions.Add(DHCPOption.TFTPServerName,   Encoding.UTF8.GetBytes(dhcp.TFTPServerName));
+                replyOptions.OtherRequestedOptions.Add(DHCPOption.BootfileName,     Encoding.UTF8.GetBytes(dhcp.BootFile));
                 replyOptions.OtherRequestedOptions.Add((DHCPOption)175,             [0x01, 0x01, 0x01, 0x08, 0x01, 0x01]);
 
                 switch (type)

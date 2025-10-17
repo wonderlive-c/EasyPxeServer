@@ -16,6 +16,5 @@
 
 	<ItemGroup>
 	  <Folder Include="Entities\BootFile\" />
-	  <Folder Include="Entities\KickStart\" />
 	</ItemGroup>
 </Project>

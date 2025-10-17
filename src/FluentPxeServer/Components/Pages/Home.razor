@@ -37,17 +37,18 @@
         Interactive="true">
         <FluentCardHeader>
             <FluentStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Spacing="8px">
-                <FluentIcon Value="@(new Icons.Filled.Size24.Server())"/>
-                <FluentText Variant="TextVariants.Title3" Align="TextAlign.Center">PXE Server</FluentText>
+                <FluentIcon Value="@(new Icons.Color.Size24.Apps())"/>
+                <FluentText Variant="TextVariants.Title3" Align="TextAlign.Center">PXE服务器</FluentText>
             </FluentStack>
         </FluentCardHeader>
         <FluentCardBody>
             <FluentStack Orientation="Orientation.Vertical" Spacing="20px">
                 <!-- Status Badge with Custom Styling -->
-                <FluentStack HorizontalAlignment="HorizontalAlignment.Center">
-                    <FluentBadge
-                        Style="padding: 10px 16px; font-size: 16px; font-weight: 600; border-radius: 8px;"
-                        Appearance="@(PxeServerService.IsRunning ? Appearance.Lightweight : Appearance.Accent)">
+                <FluentStack HorizontalAlignment="HorizontalAlignment.Left">
+                    <FluentBadge Fill="somevalue"
+                                 Style="padding: 10px 16px; font-size: 16px; font-weight: 600; border-radius: 8px;"
+                                 Color="@(PxeServerService.IsRunning ? "green" : "red")"
+                                 Appearance="@(PxeServerService.IsRunning ? Appearance.Accent : Appearance.Lightweight)">
                         @(PxeServerService.IsRunning ? "运行中" : "已停止")
                     </FluentBadge>
                 </FluentStack>
@@ -62,15 +63,15 @@
                     </FluentText>
                     <FluentStack Orientation="Orientation.Vertical" Spacing="6px" class="pl-4">
                         <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
-                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentIcon Value="@(new Icons.Filled.Size16.Star())" Size="16"/>
                             <FluentText>DHCP 服务</FluentText>
                         </FluentStack>
                         <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
-                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentIcon Value="@(new Icons.Filled.Size16.Star())" Size="16"/>
                             <FluentText>TFTP 文件传输</FluentText>
                         </FluentStack>
                         <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
-                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentIcon Value="@(new Icons.Filled.Size16.Star())" Size="16"/>
                             <FluentText>网络引导配置</FluentText>
                         </FluentStack>
                     </FluentStack>
@@ -80,9 +81,7 @@
                 <FluentStack HorizontalAlignment="HorizontalAlignment.Center" class="mt-2">
                     <FluentAnchor
                         Href="/pxe"
-                        Appearance="Appearance.Accent"
                         Class="w-full transition-all duration-300 hover:opacity-90">
-                        <FluentIcon Value="@(new Icons.Filled.Size16.Server())"/>
                         <span>管理PXE服务</span>
                     </FluentAnchor>
                 </FluentStack>
@@ -95,17 +94,18 @@
         Interactive="true">
         <FluentCardHeader>
             <FluentStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Spacing="8px">
-                <FluentIcon Value="@(new Icons.Filled.Size24.DesktopTower())"/>
-                <FluentText Variant="TextVariants.Title3" Align="TextAlign.Center">VNC Console</FluentText>
+                <FluentIcon Value="@(new Icons.Color.Size24.Laptop())"/>
+                <FluentText Variant="TextVariants.Title3" Align="TextAlign.Center">VNC控制台</FluentText>
             </FluentStack>
         </FluentCardHeader>
         <FluentCardBody>
             <FluentStack Orientation="Orientation.Vertical" Spacing="20px">
                 <!-- Status Badge with Custom Styling -->
-                <FluentStack HorizontalAlignment="HorizontalAlignment.Center">
-                    <FluentBadge
-                        Style="padding: 10px 16px; font-size: 16px; font-weight: 600; border-radius: 8px;"
-                        Appearance="@(VncService.GetActiveConnections().Count > 0 ? Appearance.Accent : Appearance.Lightweight)">
+                <FluentStack HorizontalAlignment="HorizontalAlignment.Left">
+                    <FluentBadge Fill="somevalue"
+                                     Color="@(VncService.GetActiveConnections().Count > 0  ? "green" : "gray")"
+                                 Style="padding: 10px 16px; font-size: 16px; font-weight: 600; border-radius: 8px;"
+                                 Appearance="@(VncService.GetActiveConnections().Count > 0 ? Appearance.Accent : Appearance.Lightweight)">
                         @(VncService.GetActiveConnections().Count) 活跃会话
                     </FluentBadge>
                 </FluentStack>
@@ -120,15 +120,15 @@
                     </FluentText>
                     <FluentStack Orientation="Orientation.Vertical" Spacing="6px" class="pl-4">
                         <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
-                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentIcon Value="@(new Icons.Filled.Size16.Star())" Size="16"/>
                             <FluentText>远程桌面访问</FluentText>
                         </FluentStack>
                         <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
-                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentIcon Value="@(new Icons.Filled.Size16.Star())" Size="16"/>
                             <FluentText>键盘鼠标控制</FluentText>
                         </FluentStack>
                         <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" AlignItems="AlignItems.Center">
-                            <FluentIcon Value="@(new Icons.Filled.Size24.Check())" Size="16"/>
+                            <FluentIcon Value="@(new Icons.Filled.Size16.Star())" Size="16"/>
                             <FluentText>多会话管理</FluentText>
                         </FluentStack>
                     </FluentStack>
@@ -140,7 +140,6 @@
                         Href="/vnc"
                         Appearance="Appearance.Neutral"
                         Class="w-full transition-all duration-300 hover:opacity-90">
-                        <FluentIcon Value="@(new Icons.Filled.Size24.DesktopTower())"/>
                         <span>打开VNC控制台</span>
                     </FluentAnchor>
                 </FluentStack>
@@ -179,7 +178,7 @@
                     BackgroundColor="var(--palette-primary-background)"
                     Color="var(--palette-primary-foreground)"
                     Style="width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
-                    <FluentIcon Value="@(new Icons.Filled.Size24.NetworkCheck())" Size="32"/>
+                    <FluentIcon Value="@(new Icons.Color.Size32.Poll())" Size="32"/>
                 </FluentAvatar>
 
                 <!-- Title with Better Typography -->
@@ -215,7 +214,7 @@
                     BackgroundColor="var(--palette-info-background)"
                     Color="var(--palette-info-foreground)"
                     Style="width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
-                    <FluentIcon Value="@(new Icons.Filled.Size24.Server())" Size="32"/>
+                    <FluentIcon Value="@(new Icons.Color.Size32.Document())" Size="32"/>
                 </FluentAvatar>
 
                 <!-- Title with Better Typography -->
@@ -251,7 +250,7 @@
                     BackgroundColor="var(--palette-success-background)"
                     Color="var(--palette-success-foreground)"
                     Style="width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
-                    <FluentIcon Value="@(new Icons.Filled.Size24.ArrowCircleUp())" Size="32"/>
+                    <FluentIcon Value="@(new Icons.Color.Size32.Laptop())" Size="32"/>
                 </FluentAvatar>
 
                 <!-- Title with Better Typography -->
