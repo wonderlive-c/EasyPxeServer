@@ -1,34 +1,20 @@
-﻿@inherits LayoutComponentBase
+﻿@using FluentPxeServer.Components.Settings
+@inherits LayoutComponentBase
 @inject IAppVersionService AppVersionService
-<style>
-    .header-container {
-        display: flex;
-        align-items: center; /* 垂直居中对齐 */
-        gap: 1px; /* 两个元素之间的间距 */
-    }
 
-    .logo img {
-        /* 根据需要设置图片大小 */
-        width: 40px;
-        height: 40px;
-    }
-
-    h1 {
-        margin: 0; /* 去除默认外边距 */
-        font-size: 1.5rem;
-    }
-</style>
 <div>
     <FluentLayout>
         <FluentHeader Class="siteheader">
-            <a href="/" aria-label="Back to the homepage">
                 <div class="header-container">
                     <div class="logo" role="presentation" aria-hidden="true" itemprop="logo" itemscope="itemscope">
-                        <img src="favicon.png" alt=""/>
+                        <a href="/" aria-label="Back to the homepage"><img src="favicon.png" alt="" />
+                        </a>
                     </div>
-                    <h1>PXE Server & VNC Console</h1>
+                  
                 </div>
-            </a>
+                <div class="header-text">
+                    <FluentLabel>PXE Server & VNC Console</FluentLabel>
+                </div>
             <FluentSpacer/>
 
             <div class="notifications">
@@ -45,21 +31,16 @@
             <div class="sidebar"></div>
             <FluentBodyContent id="body-content" Style="height: calc(100dvh - 90px);">
                 <div class="content">
+                    <FluentCard>
                     @Body
-                    @*<article id="article">
-
-                        <FluentMessageBarProvider Section="@App.MESSAGES_TOP" ClearAfterNavigation="true"/>
-
-                    </article>*@
-
-                    <FluentToastProvider MaxToastCount="10"/>
-                    <FluentDialogProvider/>
-                    <FluentTooltipProvider/>
-                    <FluentKeyCodeProvider/>
-                    <FluentMenuProvider/>
-
+                    </FluentCard>
                 </div>
             </FluentBodyContent>
+            <FluentToastProvider Position="ToastPosition.TopCenter" MaxToastCount="10" />
+            <FluentDialogProvider />
+            <FluentTooltipProvider />
+            <FluentKeyCodeProvider />
+            <FluentMenuProvider />
         </FluentStack>
 
         <FluentFooter Style="@("height: 40px; color: white;  font-size: var(--type-ramp-minus-1-font-size); line-height: var(--type-ramp-base-line-height);")">

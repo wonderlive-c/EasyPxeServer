@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.FluentUI.AspNetCore.Components.Extensions;
 
-namespace FluentPxeServer.Components;
+namespace FluentPxeServer.Components.Settings;
 
 public partial class SiteSettingsPanel : IDialogContentComponent
 {

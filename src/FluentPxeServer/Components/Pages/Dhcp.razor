@@ -1,192 +1,36 @@
 ﻿@page "/dhcp"
-@using System.Net
-@using PxeServices
 @using PxeServices.Entities.Dhcp
-@using PxeServices.Entities.Settings
 @using PxeStorageLite
-@inject DhcpService              DhcpService
+@using FluentPxeServer.Components.Settings
+@using PxeServices.Entities.Settings
+@using System.Net
 @inject IDhcpUserRepository      Repository
-@inject IObjectSettingRepository ObjectSettingRepository
 @inject IToastService            ToastService
+@inject IDialogService           DialogService
+@inject IObjectSettingRepository ObjectSettingRepository
 
-@* 
-详细计划 / 伪代码（在文件顶部以注释形式保留）：
-1. 优化布局：把设置面板改为两列响应式布局——左侧放“基础网络范围与服务器名”等，右侧放“DNS、服务器标识、TFTP 等”。
-2. 将“LastCount”加入界面（使用文本输入绑定到 lastCountStr），并把广播地址与默认网关放在右侧以减少左侧纵向长度。
-3. 将按钮对齐到右侧（Save 在右侧显著位置，AddUser 放在次要位置）。
-4. 修复 DataGrid 操作列回调中传递的上下文参数（使用 item 而不是 context）。
-5. 保持现有数据转换/验证逻辑不变，仅调整 UI 控件绑定与布局。
-6. 保持禁用逻辑：当 DhcpService.IsRunning 时禁用输入控件与保存按钮。
-7. 界面小幅美化：在面板顶部显示标题与简短说明；为表单组增加间距保持一致性。
-*@
-
-@if (DhcpService.IsRunning)
-{
-    <FluentAlert Severity="Severity.Warning" Dismissible="false">
-        DHCP服务正在运行中，某些设置将无法修改。
-    </FluentAlert>
-}
 <PageTitle>DHCP服务</PageTitle>
 
-<FluentStack Orientation="Orientation.Vertical" Spacing="16px">
-    <FluentStack Orientation="Orientation.Vertical" Spacing="8px" HorizontalAlign="HorizontalAlignment.Center">
-        <FluentTextBlock Weight="TextWeight.SemiBold" Style="font-size:18px;">DHCP 服务设置</FluentTextBlock>
-        <FluentTextBlock Appearance="Appearance.Subtle" Style="font-size:12px;">
-            编辑并保存 DHCP 配置。运行中服务将锁定部分设置以避免冲突。
-        </FluentTextBlock>
+<FluentStack Orientation="Orientation.Vertical">
+    <!-- 操作按钮：靠右对齐 -->
+    <FluentStack Orientation="Orientation.Horizontal"Style="width:100%; margin-top:12px;">
+        <FluentButton @onclick="OpenSettingDialog" Title="新增用户">
+            设置
+        </FluentButton>
+        <FluentButton @onclick="AddUser" Title="新增用户">
+            新增用户
+        </FluentButton>
     </FluentStack>
-
-    <FluentStack HorizontalAlign="HorizontalAlignment.Center">
-        <FluentGrid ColumnGap="24px" RowGap="12px">
-            <!-- 左侧：主要网络范围与基础设置 -->
-            <FluentGridItem Size="6">
-                <FluentStack Orientation="Orientation.Vertical" Spacing="12px">
-                    <FluentLabel>基础</FluentLabel>
-
-                    <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
-                        <FluentLabel For="serverName">服务器名称</FluentLabel>
-                        <FluentTextField Id="serverName"
-                                         @bind-Value="serverName"
-                                         Placeholder="pxe-server"
-                                         Disabled="@DhcpService.IsRunning"/>
-                    </FluentStack>
-
-                    <FluentStack Orientation="Orientation.Horizontal" Spacing="12px">
-                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px" Style="flex:1;">
-                            <FluentLabel For="dhcpStart">起始地址</FluentLabel>
-                            <FluentTextField Id="dhcpStart"
-                                             @bind-Value="dhcpStartAddressStr"
-                                             Placeholder="192.168.1.100"
-                                             Disabled="@DhcpService.IsRunning"/>
-                        </FluentStack>
-
-                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px" Style="flex:1;">
-                            <FluentLabel For="dhcpEnd">结束地址</FluentLabel>
-                            <FluentTextField Id="dhcpEnd"
-                                             @bind-Value="dhcpEndAddressStr"
-                                             Placeholder="192.168.1.200"
-                                             Disabled="@DhcpService.IsRunning"/>
-                        </FluentStack>
-                    </FluentStack>
-
-                    <FluentStack Orientation="Orientation.Horizontal" Spacing="12px">
-                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px" Style="flex:1;">
-                            <FluentLabel For="subnetMask">子网掩码</FluentLabel>
-                            <FluentTextField Id="subnetMask"
-                                             @bind-Value="dhcpSubnetMaskStr"
-                                             Placeholder="255.255.255.0"
-                                             Disabled="@DhcpService.IsRunning"/>
-                        </FluentStack>
-
-                    </FluentStack>
-
-                    <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
-                        <FluentLabel>启用 DHCP</FluentLabel>
-                        <FluentSwitch @bind-Value="dhcpEnabled" Disabled="@DhcpService.IsRunning"/>
-                    </FluentStack>
-                </FluentStack>
-            </FluentGridItem>
-
-            <!-- 右侧：DNS、网关与服务相关 -->
-            <FluentGridItem Size="6">
-                <FluentStack Orientation="Orientation.Vertical" Spacing="12px">
-                    <FluentLabel>高级 / 服务</FluentLabel>
-
-                    <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
-                        <FluentLabel For="gateway">默认网关</FluentLabel>
-                        <FluentTextField Id="gateway"
-                                         @bind-Value="dhcpGatewayStr"
-                                         Placeholder="192.168.1.1"
-                                         Disabled="@DhcpService.IsRunning"/>
-                    </FluentStack>
-
-                    <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
-                        <FluentLabel For="broadcast">广播地址</FluentLabel>
-                        <FluentTextField Id="broadcast"
-                                         @bind-Value="broadcastStr"
-                                         Placeholder="192.168.1.255"
-                                         Disabled="@DhcpService.IsRunning" />
-                    </FluentStack>
-
-                    <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
-                        <FluentLabel For="domainName">域名</FluentLabel>
-                        <FluentTextField Id="domainName"
-                                         @bind-Value="domainName"
-                                         Placeholder="example.local"
-                                         Disabled="@DhcpService.IsRunning"/>
-                    </FluentStack>
-
-                    <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
-                        <FluentLabel For="dnsServers">DNS 服务器（逗号或换行分隔）</FluentLabel>
-                        <FluentTextField Id="dnsServers"
-                                         @bind-Value="domainNameServersStr"
-                                         Placeholder="8.8.8.8,8.8.4.4"
-                                         Multiline="true"
-                                         Disabled="@DhcpService.IsRunning"/>
-                    </FluentStack>
-
-                    <FluentStack Orientation="Orientation.Horizontal" Spacing="12px">
-                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px" Style="flex:1;">
-                            <FluentLabel For="serverIdentifier">Server Identifier</FluentLabel>
-                            <FluentTextField Id="serverIdentifier"
-                                             @bind-Value="serverIdentifierStr"
-                                             Placeholder="192.168.1.2"
-                                             Disabled="@DhcpService.IsRunning"/>
-                        </FluentStack>
-
-                        <FluentStack Orientation="Orientation.Vertical" Spacing="8px" Style="flex:1;">
-                            <FluentLabel For="serverIp">服务器 IP</FluentLabel>
-                            <FluentTextField Id="serverIp"
-                                             @bind-Value="serverIpAddressStr"
-                                             Placeholder="192.168.1.2"
-                                             Disabled="@DhcpService.IsRunning"/>
-                        </FluentStack>
-                    </FluentStack>
-
-                    <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
-                        <FluentLabel For="tftpServerName">TFTP 服务器名</FluentLabel>
-                        <FluentTextField Id="tftpServerName"
-                                         @bind-Value="tftpServerName"
-                                         Placeholder="tftp-server"
-                                         Disabled="@DhcpService.IsRunning"/>
-                    </FluentStack>
-
-                    <FluentStack Orientation="Orientation.Vertical" Spacing="8px">
-                        <FluentLabel For="bootFileName">启动文件名</FluentLabel>
-                        <FluentTextField Id="bootFileName"
-                                         @bind-Value="bootFile"
-                                         Placeholder="pxeboot.0"
-                                         Disabled="@DhcpService.IsRunning"/>
-                    </FluentStack>
-                </FluentStack>
-            </FluentGridItem>
-        </FluentGrid>
-
-        <!-- 操作按钮：靠右对齐 -->
-        <FluentStack Orientation="Orientation.Horizontal" Spacing="8px" HorizontalAlign="HorizontalAlignment.End" Style="width:100%; margin-top:12px;">
-            <FluentButton IconName="Upload" @onclick="AddUser" Title="新增用户">
-                新增用户
-            </FluentButton>
-            <FluentButton Appearance="Appearance.Accent"
-                          @onclick="SaveDhcpAsync"
-                          disabled="@(DhcpService.IsRunning)">
-                保存
-            </FluentButton>
-        </FluentStack>
-    </FluentStack>
-
     <!-- 用户表格 -->
-    <FluentStack Orientation="Orientation.Vertical" Spacing="8px" Style="width:100%;">
+    <FluentStack Orientation="Orientation.Vertical" Style="width:100%;">
         <FluentDataGrid Items="DhcpUsers" Style="margin-top: 12px;">
             <PropertyColumn Property="@(x => x.MacAddress)" Title="MAC 地址" MinWidth="180"/>
             <PropertyColumn Property="@(x => x.IpAddress)" Title="IP 地址" MinWidth="180"/>
             <TemplateColumn Title="操作" MinWidth="140">
-                <CellTemplate Context="item">
-                    <FluentStack Orientation="Orientation.Horizontal" Spacing="8px">
-                        <FluentButton IconName="Download" Title="修改" @onclick="() => UpdateUser(context)">修改</FluentButton>
-                        <FluentButton IconName="Delete" Title="删除" @onclick="() => DeleteUser(context.Id)">删除</FluentButton>
+                    <FluentStack Orientation="Orientation.Horizontal">
+                        <FluentButton Title="修改" @onclick="() => UpdateUser(context)">修改</FluentButton>
+                        <FluentButton Title="删除" @onclick="() => DeleteUser(context.Id)">删除</FluentButton>
                     </FluentStack>
-                </CellTemplate>
             </TemplateColumn>
         </FluentDataGrid>
     </FluentStack>
@@ -197,63 +41,73 @@
 <!--update-->
 <FluentDialog Hidden="true"></FluentDialog>
 
-<FluentDialogProvider/>
-
 @code {
 
     private IQueryable<DhcpUser> DhcpUsers { get; set; }
-    private DhcpSetting          dhcpSetting;
 
-    // 临时绑定字段（字符串形式便于输入/验证）
-    private string serverName;
-    private bool   dhcpEnabled;
-    private string dhcpStartAddressStr;
-    private string dhcpEndAddressStr;
-    private string dhcpSubnetMaskStr;
-    private string dhcpGatewayStr;
-    private string broadcastStr;
-    private string domainName;
-    private string serverIdentifierStr;
-    private string domainNameServersStr;
-    private string serverIpAddressStr;
-    private string tftpServerName;
-    private string bootFile;
-    private string lastCountStr;
+    protected override async Task OnInitializedAsync() { DhcpUsers = (await Repository.GetListAsync()).AsQueryable(); }
 
-    protected override async Task OnInitializedAsync()
+    private Task AddUser()
     {
-        DhcpUsers   = (await Repository.GetListAsync()).AsQueryable();
-        dhcpSetting = await ObjectSettingRepository.GetObjectSettingAsync<DhcpSetting>() ?? DhcpSetting.Default;
-
-        // 将 dhcpSetting 映射到字符串字段（安全 null 检查）
-        serverName           = dhcpSetting?.ServerName                   ?? string.Empty;
-        dhcpEnabled          = dhcpSetting?.DhcpEnabled                  ?? false;
-        dhcpStartAddressStr  = dhcpSetting?.DhcpStartAddress?.ToString() ?? string.Empty;
-        dhcpEndAddressStr    = dhcpSetting?.DhcpEndAddress?.ToString()   ?? string.Empty;
-        dhcpSubnetMaskStr    = dhcpSetting?.DhcpSubnetMask?.ToString()   ?? string.Empty;
-        dhcpGatewayStr       = dhcpSetting?.DhcpGateway?.ToString()      ?? string.Empty;
-        broadcastStr         = dhcpSetting?.Broadcast?.ToString()        ?? string.Empty;
-        domainName           = dhcpSetting?.DomainName                   ?? string.Empty;
-        serverIdentifierStr  = dhcpSetting?.ServerIdentifier?.ToString() ?? string.Empty;
-        domainNameServersStr = dhcpSetting?.DomainNameServers != null ? string.Join(", ", dhcpSetting.DomainNameServers.Select(ip => ip.ToString())) : string.Empty;
-        serverIpAddressStr   = dhcpSetting?.ServerIpAddress?.ToString() ?? string.Empty;
-        tftpServerName       = dhcpSetting?.TFTPServerName              ?? string.Empty;
-        bootFile             = dhcpSetting?.BootFile                    ?? string.Empty;
-        lastCountStr         = dhcpSetting?.LastCount.ToString()        ?? "0";
+        ToastService.ShowInfo("新增用户");
+        return Task.CompletedTask;
     }
 
-    private Task AddUser() { return Task.CompletedTask; }
-
-    private Task UpdateUser(DhcpUser name) { return Task.CompletedTask; }
+    private Task UpdateUser(DhcpUser name)
+    {
+        ToastService.ShowInfo("修改用户" + name.IpAddress);
+        return Task.CompletedTask;
+    }
 
     private async Task DeleteUser(Guid id)
     {
         await Repository.DeleteAsync(id);
         DhcpUsers = (await Repository.GetListAsync()).AsQueryable();
+        ToastService.ShowSuccess("删除成功");
         StateHasChanged();
     }
 
-    private async Task SaveDhcpAsync()
+    private async Task OpenSettingDialog()
+    {
+        var dhcpSetting = await ObjectSettingRepository.GetObjectSettingAsync<DhcpSetting>() ?? DhcpSetting.Default;
+        var paramSetting = new DhcpTempForBind()
+        {
+            // 将 dhcpSetting 映射到字符串字段（安全 null 检查）
+            serverName           = dhcpSetting?.ServerName                   ?? string.Empty,
+            dhcpEnabled          = dhcpSetting?.DhcpEnabled                  ?? false,
+            dhcpStartAddressStr  = dhcpSetting?.DhcpStartAddress?.ToString() ?? string.Empty,
+            dhcpEndAddressStr    = dhcpSetting?.DhcpEndAddress?.ToString()   ?? string.Empty,
+            dhcpSubnetMaskStr    = dhcpSetting?.DhcpSubnetMask?.ToString()   ?? string.Empty,
+            dhcpGatewayStr       = dhcpSetting?.DhcpGateway?.ToString()      ?? string.Empty,
+            broadcastStr         = dhcpSetting?.Broadcast?.ToString()        ?? string.Empty,
+            domainName           = dhcpSetting?.DomainName                   ?? string.Empty,
+            serverIdentifierStr  = dhcpSetting?.ServerIdentifier?.ToString() ?? string.Empty,
+            domainNameServersStr = dhcpSetting?.DomainNameServers != null ? string.Join(", ", dhcpSetting.DomainNameServers.Select(ip => ip.ToString())) : string.Empty,
+            serverIpAddressStr   = dhcpSetting?.ServerIpAddress?.ToString() ?? string.Empty,
+            tftpServerName       = dhcpSetting?.TFTPServerName              ?? string.Empty,
+            bootFile             = dhcpSetting?.BootFile                    ?? string.Empty,
+            lastCountStr         = dhcpSetting?.LastCount.ToString()        ?? "0"
+        };
+
+        var _dialog = await DialogService.ShowPanelAsync<DhcpSettings>(paramSetting,
+                                                                       new DialogParameters()
+                                                                       {
+                                                                           ShowTitle       = true,
+                                                                           Title           = "DHCP设置",
+                                                                           Alignment       = HorizontalAlignment.Right,
+                                                                           PrimaryAction   = "保存",
+                                                                           SecondaryAction = "取消",
+                                                                           ShowDismiss     = true,
+                                                                           TrapFocus       = false
+                                                                       });
+
+        var data = await _dialog.Result;
+        if (!data.Cancelled) { await SaveDhcpAsync(dhcpSetting!, data.Data as DhcpTempForBind); }
+
+        await _dialog.CloseAsync();
+    }
+
+    private async Task SaveDhcpAsync(DhcpSetting setting, DhcpTempForBind? data)
     {
         try
         {
@@ -290,45 +144,45 @@
                 throw new FormatException($"字段 {fieldName} 不是有效整数：{s}");
             }
 
-            var newSetting = dhcpSetting ?? new DhcpSetting();
+            setting.ServerName        = data.serverName;
+            setting.DhcpEnabled       = data.dhcpEnabled;
+            setting.DhcpStartAddress  = ParseIp(data.dhcpStartAddressStr, "DhcpStartAddress");
+            setting.DhcpEndAddress    = ParseIp(data.dhcpEndAddressStr,   "DhcpEndAddress");
+            setting.DhcpSubnetMask    = ParseIp(data.dhcpSubnetMaskStr,   "DhcpSubnetMask");
+            setting.DhcpGateway       = ParseIp(data.dhcpGatewayStr,      "DhcpGateway");
+            setting.Broadcast         = ParseIp(data.broadcastStr,        "Broadcast");
+            setting.DomainName        = data.domainName;
+            setting.ServerIdentifier  = ParseIp(data.serverIdentifierStr, "ServerIdentifier");
+            setting.DomainNameServers = ParseIpArray(data.domainNameServersStr);
+            setting.ServerIpAddress   = ParseIp(data.serverIpAddressStr, "ServerIpAddress");
+            setting.TFTPServerName    = data.tftpServerName;
+            setting.BootFile          = data.bootFile;
+            setting.LastCount         = ParseInt(data.lastCountStr, "LastCount");
 
-            newSetting.ServerName        = serverName;
-            newSetting.DhcpEnabled       = dhcpEnabled;
-            newSetting.DhcpStartAddress  = ParseIp(dhcpStartAddressStr, "DhcpStartAddress");
-            newSetting.DhcpEndAddress    = ParseIp(dhcpEndAddressStr,   "DhcpEndAddress");
-            newSetting.DhcpSubnetMask    = ParseIp(dhcpSubnetMaskStr,   "DhcpSubnetMask");
-            newSetting.DhcpGateway       = ParseIp(dhcpGatewayStr,      "DhcpGateway");
-            newSetting.Broadcast         = ParseIp(broadcastStr,        "Broadcast");
-            newSetting.DomainName        = domainName;
-            newSetting.ServerIdentifier  = ParseIp(serverIdentifierStr, "ServerIdentifier");
-            newSetting.DomainNameServers = ParseIpArray(domainNameServersStr);
-            newSetting.ServerIpAddress   = ParseIp(serverIpAddressStr, "ServerIpAddress");
-            newSetting.TFTPServerName    = tftpServerName;
-            newSetting.BootFile          = bootFile;
-            newSetting.LastCount         = ParseInt(lastCountStr, "LastCount");
-
-            await ObjectSettingRepository.SetObjectSettingAsync(newSetting);
-            dhcpSetting = newSetting;
-
-            // 同步临时字段（确保显示一致）
-            serverName           = dhcpSetting.ServerName ?? string.Empty;
-            dhcpEnabled          = dhcpSetting.DhcpEnabled;
-            dhcpStartAddressStr  = dhcpSetting.DhcpStartAddress?.ToString() ?? string.Empty;
-            dhcpEndAddressStr    = dhcpSetting.DhcpEndAddress?.ToString()   ?? string.Empty;
-            dhcpSubnetMaskStr    = dhcpSetting.DhcpSubnetMask?.ToString()   ?? string.Empty;
-            dhcpGatewayStr       = dhcpSetting.DhcpGateway?.ToString()      ?? string.Empty;
-            broadcastStr         = dhcpSetting.Broadcast?.ToString()        ?? string.Empty;
-            domainName           = dhcpSetting.DomainName                   ?? string.Empty;
-            serverIdentifierStr  = dhcpSetting.ServerIdentifier?.ToString() ?? string.Empty;
-            domainNameServersStr = dhcpSetting.DomainNameServers != null ? string.Join(", ", dhcpSetting.DomainNameServers.Select(ip => ip.ToString())) : string.Empty;
-            serverIpAddressStr   = dhcpSetting.ServerIpAddress?.ToString() ?? string.Empty;
-            tftpServerName       = dhcpSetting.TFTPServerName              ?? string.Empty;
-            bootFile             = dhcpSetting.BootFile                    ?? string.Empty;
-            lastCountStr         = dhcpSetting.LastCount.ToString();
+            await ObjectSettingRepository.SetObjectSettingAsync(setting);
 
             ToastService.ShowSuccess("DHCP设置保存成功");
         }
         catch (Exception e) { ToastService.ShowError("DHCP设置保存失败：" + e.Message); }
+    }
+
+    public class DhcpTempForBind
+    {
+        // 临时绑定字段（字符串形式便于输入/验证）
+        public string serverName;
+        public bool   dhcpEnabled;
+        public string dhcpStartAddressStr;
+        public string dhcpEndAddressStr;
+        public string dhcpSubnetMaskStr;
+        public string dhcpGatewayStr;
+        public string broadcastStr;
+        public string domainName;
+        public string serverIdentifierStr;
+        public string domainNameServersStr;
+        public string serverIpAddressStr;
+        public string tftpServerName;
+        public string bootFile;
+        public string lastCountStr;
     }
 
 }

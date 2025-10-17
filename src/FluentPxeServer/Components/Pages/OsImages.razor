@@ -4,7 +4,6 @@
 @inject NavigationManager NavigationManager 
 
 <PageTitle>ISO镜像管理</PageTitle>
-<FluentCard Style="padding: 24px; max-width: 900px; margin: auto;">
     <FluentStack HorizontalAlign="HorizontalAlignment.Center">
         <FluentButton Id="MyUploadButton" IconName="Upload">上传ISO</FluentButton>
         <FluentInputFile DragDropZoneVisible="true"
@@ -18,17 +17,14 @@
     <FluentDataGrid Items="isoFiles" Style="margin-top: 24px;">
         <PropertyColumn Property="@(x => x.Name)" Title="文件名" MinWidth="200"/>
         <TemplateColumn Title="大小 (MB)" MinWidth="100">
-            <CellTemplate Context="item">
                 @((context.Size / (1024 * 1024)).ToString("N0"))
-            </CellTemplate>
+        
         </TemplateColumn>
         <TemplateColumn Title="修改时间" MinWidth="180">
-            <CellTemplate Context="item">
                 @context.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")
-            </CellTemplate>
+   
         </TemplateColumn>
         <TemplateColumn Title="操作" MinWidth="160">
-            <CellTemplate Context="item">
                 <FluentStack>
                     <FluentButton
                         IconName="Download"
@@ -42,10 +38,8 @@
                         删除
                     </FluentButton>
                 </FluentStack>
-            </CellTemplate>
         </TemplateColumn>
     </FluentDataGrid>
-</FluentCard>
 
 @code {
     private IQueryable<IsoFileInfo> isoFiles;

@@ -1,25 +1,27 @@
 ﻿using System.Net.Mime;
 using Microsoft.AspNetCore.Mvc;
 using PxeServices;
+using PxeServices.Entities.Settings;
 
 namespace FluentPxeServer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TftpFileController(TftpService tftpService, ILogger<TftpFileController> logger) : ControllerBase
+    public class TftpFileController(IObjectSettingRepository objectSettingRepository, ILogger<TftpFileController> logger) : ControllerBase
     {
+        private async Task<string> GetTftpShareFolder() => ((await objectSettingRepository.GetObjectSettingAsync<TftpSetting>()) ?? TftpSetting.Default).TftpShareFolder;
         /// <summary>
         /// 获取目录结构（包括文件和子目录）
         /// </summary>
         /// <param name="path">目录路径（相对路径），默认为根目录</param>
         /// <returns>目录结构信息</returns>
         [HttpGet("directory")]
-        public IActionResult GetDirectoryStructure([FromQuery] string path = "")
+        public async Task<IActionResult> GetDirectoryStructure([FromQuery] string path = "")
         {
             try
             {
                 logger.LogInformation("Getting directory structure for path: {Path}", path);
-                var directoryStructure = tftpService.GetDirectoryStructure(path);
+                var directoryStructure = GetDirectoryStructure(await GetTftpShareFolder());
                 return Ok(directoryStructure);
             }
             catch (Exception ex)
@@ -47,7 +49,7 @@ namespace FluentPxeServer.Controllers
                 }
 
                 // 获取完整文件路径
-                var fullPath = Path.Combine(tftpService.RootDirectory, fileName);
+                var fullPath = Path.Combine(await GetTftpShareFolder(), fileName);
 
                 // 检查路径是否存在
                 if (!Directory.Exists(fullPath)

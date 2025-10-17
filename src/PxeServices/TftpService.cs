@@ -1,11 +1,13 @@
 ﻿using System.Net;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using PxeServices.Entities.Settings;
 using Tftp.Net;
 
 namespace PxeServices;
 
-public class TftpService : IHostedService
+public class TftpService(ILogger<TftpService> logger, IServiceProvider serviceProvider) : IHostedService
 {
     private readonly ILogger<TftpService> logger;
     private          TftpServer?          tftpServer;
@@ -13,16 +15,7 @@ public class TftpService : IHostedService
     public bool IsRunning => tftpServer != null;
 
     public string RootDirectory { get; set; } = ConstSetting.TFTP_ROOT;
-
-    public string SelectedInterfaceIp { get; set; } = "";
-
-    public TftpService(ILogger<TftpService> logger)
-    {
-        this.logger = logger;
-        // 确保TFTP根目录存在
-        if (!Directory.Exists(RootDirectory)) Directory.CreateDirectory(RootDirectory);
-    }
-
+    
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (tftpServer != null)
@@ -30,9 +23,12 @@ public class TftpService : IHostedService
 
         try
         {
+            using var scope    = serviceProvider.CreateScope();
+            var       settings = await scope.ServiceProvider.GetRequiredService<IObjectSettingRepository>().GetObjectSettingAsync<TftpSetting>() ?? TftpSetting.Default;
+            RootDirectory = settings.TftpShareFolder;
             // 创建TFTP服务器
-            var port = 69;
-            tftpServer = !string.IsNullOrEmpty(SelectedInterfaceIp) ? new TftpServer(IPAddress.Parse(SelectedInterfaceIp), port) : new TftpServer(IPAddress.Any, port);
+            var port = settings.Port;
+            tftpServer = new TftpServer(IPAddress.Any, port);
 
             // 处理读请求
             tftpServer.OnReadRequest += HandleReadRequest;

@@ -1,0 +1,124 @@
+﻿@using PxeServices.Entities.Settings
+@using PxeServices
+@using System.Net
+@using FluentPxeServer.Components.Pages
+@inject DhcpService              DhcpService
+@inject IToastService            ToastService
+@implements IDialogContentComponent
+
+<FluentStack Orientation="Orientation.Vertical" Spacing="12px">
+
+    <FluentStack Orientation="Orientation.Vertical">
+        <FluentLabel For="serverName">服务器名称</FluentLabel>
+        <FluentTextField Id="serverName"
+                         @bind-Value="@Content.serverName"
+                         Placeholder="pxe-server"
+                         Disabled="@DhcpService.IsRunning"/>
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Horizontal" Spacing="12px">
+        <FluentStack Orientation="Orientation.Vertical" Style="flex:1;">
+            <FluentLabel For="dhcpStart">起始地址</FluentLabel>
+            <FluentTextField Id="dhcpStart"
+                             @bind-Value="@Content.dhcpStartAddressStr"
+                             Placeholder="192.168.1.100"
+                             Disabled="@DhcpService.IsRunning"/>
+        </FluentStack>
+
+        <FluentStack Orientation="Orientation.Vertical" Style="flex:1;">
+            <FluentLabel For="dhcpEnd">结束地址</FluentLabel>
+            <FluentTextField Id="dhcpEnd"
+                             @bind-Value="@Content.dhcpEndAddressStr"
+                             Placeholder="192.168.1.200"
+                             Disabled="@DhcpService.IsRunning"/>
+        </FluentStack>
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Horizontal" Spacing="12px">
+        <FluentStack Orientation="Orientation.Vertical" Style="flex:1;">
+            <FluentLabel For="subnetMask">子网掩码</FluentLabel>
+            <FluentTextField Id="subnetMask"
+                             @bind-Value="@Content.dhcpSubnetMaskStr"
+                             Placeholder="255.255.255.0"
+                             Disabled="@DhcpService.IsRunning"/>
+        </FluentStack>
+
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Vertical">
+        <FluentLabel>启用 DHCP</FluentLabel>
+        <FluentSwitch @bind-Value="@Content.dhcpEnabled" Disabled="@DhcpService.IsRunning" />
+    </FluentStack>
+    <FluentStack Orientation="Orientation.Vertical">
+        <FluentLabel For="gateway">默认网关</FluentLabel>
+        <FluentTextField Id="gateway"
+                         @bind-Value="@Content.dhcpGatewayStr"
+                         Placeholder="192.168.1.1"
+                         Disabled="@DhcpService.IsRunning"/>
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Vertical">
+        <FluentLabel For="broadcast">广播地址</FluentLabel>
+        <FluentTextField Id="broadcast"
+                         @bind-Value="@Content.broadcastStr"
+                         Placeholder="192.168.1.255"
+                         Disabled="@DhcpService.IsRunning"/>
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Vertical">
+        <FluentLabel For="domainName">域名</FluentLabel>
+        <FluentTextField Id="domainName"
+                         @bind-Value="@Content.domainName"
+                         Placeholder="example.local"
+                         Disabled="@DhcpService.IsRunning"/>
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Vertical">
+        <FluentLabel For="dnsServers">DNS 服务器（逗号或换行分隔）</FluentLabel>
+        <FluentTextField Id="dnsServers"
+                         @bind-Value="@Content.domainNameServersStr"
+                         Placeholder="8.8.8.8,8.8.4.4"
+                         Disabled="@DhcpService.IsRunning"/>
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Horizontal" Spacing="12px">
+        <FluentStack Orientation="Orientation.Vertical" Style="flex:1;">
+            <FluentLabel For="serverIdentifier">Server Identifier</FluentLabel>
+            <FluentTextField Id="serverIdentifier"
+                             @bind-Value="@Content.serverIdentifierStr"
+                             Placeholder="192.168.1.2"
+                             Disabled="@DhcpService.IsRunning"/>
+        </FluentStack>
+
+        <FluentStack Orientation="Orientation.Vertical" Style="flex:1;">
+            <FluentLabel For="serverIp">服务器 IP</FluentLabel>
+            <FluentTextField Id="serverIp"
+                             @bind-Value="@Content.serverIpAddressStr"
+                             Placeholder="192.168.1.2"
+                             Disabled="@DhcpService.IsRunning"/>
+        </FluentStack>
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Vertical">
+        <FluentLabel For="tftpServerName">TFTP 服务器名</FluentLabel>
+        <FluentTextField Id="tftpServerName"
+                         @bind-Value="@Content.tftpServerName"
+                         Placeholder="tftp-server"
+                         Disabled="@DhcpService.IsRunning"/>
+    </FluentStack>
+
+    <FluentStack Orientation="Orientation.Vertical">
+        <FluentLabel For="bootFileName">启动文件名</FluentLabel>
+        <FluentTextField Id="bootFileName"
+                         @bind-Value="@Content.bootFile"
+                         Placeholder="pxeboot.0"
+                         Disabled="@DhcpService.IsRunning"/>
+    </FluentStack>
+</FluentStack>
+
+@code {
+
+    [Parameter]
+    public Dhcp.DhcpTempForBind Content { get; set; } = default!;
+
+}
