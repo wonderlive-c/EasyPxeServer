@@ -9,7 +9,6 @@ namespace PxeServices;
 
 public class TftpService(ILogger<TftpService> logger, IServiceProvider serviceProvider) : IHostedService
 {
-    private readonly ILogger<TftpService> logger;
     private          TftpServer?          tftpServer;
 
     public bool IsRunning => tftpServer != null;
@@ -136,33 +135,26 @@ public class TftpService(ILogger<TftpService> logger, IServiceProvider servicePr
     }
 
     // 获取TFTP目录中的文件列表（仅顶层）
-    public List<TftpFileInfo> GetFiles()
+    public IEnumerable<TftpFileInfo> GetFiles()
     {
-        var files = new List<TftpFileInfo>();
-
         if (!Directory.Exists(RootDirectory))
-            return files;
+            yield break;
 
-        try
+        foreach (var filePath in Directory.GetFiles(RootDirectory, "*.*", SearchOption.TopDirectoryOnly))
         {
-            foreach (var filePath in Directory.GetFiles(RootDirectory, "*.*", SearchOption.TopDirectoryOnly))
+            var fileInfo = new FileInfo(filePath);
+            yield return new TftpFileInfo
             {
-                var fileInfo = new FileInfo(filePath);
-                files.Add(new TftpFileInfo
-                {
-                    Name         = Path.GetRelativePath(RootDirectory, filePath),
-                    Size         = fileInfo.Length,
-                    LastModified = fileInfo.LastWriteTime
-                });
-            }
+                Name         = Path.GetRelativePath(RootDirectory, filePath),
+                Size         = fileInfo.Length,
+                LastModified = fileInfo.LastWriteTime
+            };
         }
-        catch (Exception ex) { logger.LogError(ex, "Error getting TFTP files: {Message}", ex.Message); }
 
-        return files;
     }
 
     // 获取TFTP目录结构（包括子目录和文件）
-    public List<DirectoryItem> GetDirectoryStructure(string path = "")
+    public IEnumerable<DirectoryItem> GetDirectoryStructure(string path = "")
     {
         var    result = new List<DirectoryItem>();
         string fullPath;

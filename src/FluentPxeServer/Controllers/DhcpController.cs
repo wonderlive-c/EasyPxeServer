@@ -32,8 +32,6 @@ public class DhcpController(IServiceProvider serviceProvider) : ControllerBase
 {
     private IObjectSettingRepository SettingRepository => serviceProvider.GetService<IObjectSettingRepository>();
 
-    private IDhcpUserRepository DhcpUserRepository => serviceProvider.GetService<IDhcpUserRepository>();
-
     // GET api/Dhcp
     [HttpGet]
     public Task<DhcpSetting?> Get() { return SettingRepository.GetObjectSettingAsync<DhcpSetting>(); }

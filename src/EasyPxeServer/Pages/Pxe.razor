@@ -209,7 +209,6 @@
 
             // 设置服务的网络接口
             DhcpService.SelectedInterfaceIp = SelectedInterfaceIp;
-            TftpService.SelectedInterfaceIp = SelectedInterfaceIp;
 
             // 如果没有设置下一跳服务器IP，默认使用选定的接口IP
             if (string.IsNullOrEmpty(DhcpService.NextServerIp)) { DhcpService.NextServerIp = SelectedInterfaceIp; }

@@ -24,12 +24,6 @@ namespace PxeServices.Entities.KickStart;
 
 public class KickStartCfg : Entity<Guid>
 {
-    #region Implementation of IEntity<Guid>
-
-    public Guid Id { get => default; set { } }
-
-    #endregion
-
     public string Name        { get; set; }
     public string Description { get; set; }
     public string Content     { get; set; }

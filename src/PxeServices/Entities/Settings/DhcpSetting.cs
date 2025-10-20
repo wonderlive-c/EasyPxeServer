@@ -4,9 +4,12 @@ using System.Text.Json.Serialization;
 
 namespace PxeServices.Entities.Settings;
 
+/// <summary>
+/// DHCP配置项
+/// </summary>
 public class DhcpSetting
 {
-    public static DhcpSetting Default =>
+    public static readonly DhcpSetting Default =
         new()
         {
             ServerName        = @"pxeserver",
@@ -24,27 +27,58 @@ public class DhcpSetting
             BootFile          = @"menu.txt",
             LastCount         = 0
         };
-
+    /// <summary>
+    /// DHCP服务器名称。
+    /// </summary>
     public string      ServerName        { get; set; }
+    /// <summary>
+    /// 是否启用DHCP。
+    /// </summary>
     public bool        DhcpEnabled       { get; set; }
-    
+    /// <summary>
+    /// DHCP开始地址。
+    /// </summary>
     public IPAddress   DhcpStartAddress  { get; set; }
     
+    /// <summary>
+    /// DHCP结束地址。
+    /// </summary>
     public IPAddress   DhcpEndAddress    { get; set; }
-    
+    /// <summary>
+    /// DHCP子网掩码。
+    /// </summary>
     public IPAddress   DhcpSubnetMask    { get; set; }
-    
+    /// <summary>
+    /// DHCP网关。
+    /// </summary>
     public IPAddress   DhcpGateway       { get; set; }
-    
+    /// <summary>
+    /// 广播地址。
+    /// </summary>
     public IPAddress   Broadcast         { get; set; }
+    /// <summary>
+    /// 域名。
+    /// </summary>
     public string      DomainName        { get; set; }
-    
+    /// <summary>
+    /// 服务器标识符。
+    /// </summary>
     public IPAddress   ServerIdentifier  { get; set; }
-    
+    /// <summary>
+    /// 域名服务器列表。
+    /// </summary>
     public IPAddress[] DomainNameServers { get; set; }
-    
+    /// <summary>
+    /// TFTP服务器地址。
+    /// </summary>
     public IPAddress   ServerIpAddress   { get; set; }
+    /// <summary>
+    /// TFTP服务器名称。
+    /// </summary>
     public string      TFTPServerName    { get; set; }
+    /// <summary>
+    /// 启动文件名。
+    /// </summary>
     public string      BootFile          { get; set; }
     public int         LastCount         { get; set; }
 
@@ -76,29 +110,29 @@ public class DhcpSetting
          || DhcpEndAddress.AddressFamily   != AddressFamily.InterNetwork
          || DhcpSubnetMask.AddressFamily   != AddressFamily.InterNetwork) { throw new NotSupportedException("Only IPv4 addresses are supported by NextAddress."); }
 
-        uint start = ToUInt32(DhcpStartAddress);
-        uint end   = ToUInt32(DhcpEndAddress);
-        uint mask  = ToUInt32(DhcpSubnetMask);
+        var start = ToUInt32(DhcpStartAddress);
+        var end   = ToUInt32(DhcpEndAddress);
+        var mask  = ToUInt32(DhcpSubnetMask);
 
         if (start > end) throw new InvalidOperationException("DhcpStartAddress must be less than or equal to DhcpEndAddress.");
 
-        uint network   = start & mask;
-        uint broadcast = network | ~mask;
+        var network   = start & mask;
+        var broadcast = network | ~mask;
 
         // 可用主机范围，排除 network 与 broadcast
-        uint usableStart = Math.Max(start, network + 1);
-        uint usableEnd   = Math.Min(end, broadcast - 1);
+        var usableStart = Math.Max(start, network + 1);
+        var usableEnd   = Math.Min(end, broadcast - 1);
 
         if (usableStart > usableEnd) throw new InvalidOperationException("No usable IP addresses in the configured range/mask.");
 
-        uint range = usableEnd - usableStart + 1;
+        var range = usableEnd - usableStart + 1;
 
         // 计算下一个偏移（相对于 usableStart），处理 LastCount 可能为负或超出范围的情况
-        long nextOffsetLong                    = ((long)LastCount + 1) % (long)range;
+        var nextOffsetLong                    = ((long)LastCount + 1) % (long)range;
         if (nextOffsetLong < 0) nextOffsetLong += range;
-        uint nextOffset                        = (uint)nextOffsetLong;
+        var nextOffset                        = (uint)nextOffsetLong;
 
-        uint nextIpUInt = usableStart + nextOffset;
+        var nextIpUInt = usableStart + nextOffset;
 
         // 更新 LastCount 为 offset（表示在可用池中的位置），便于下次调用继续循环
         LastCount = (int)nextOffset;
@@ -108,14 +142,14 @@ public class DhcpSetting
 
     private static uint ToUInt32(IPAddress ip)
     {
-        byte[] b = ip.GetAddressBytes();
+        var b = ip.GetAddressBytes();
         if (b.Length != 4) throw new ArgumentException("Only IPv4 addresses supported.");
         return ((uint)b[0] << 24) | ((uint)b[1] << 16) | ((uint)b[2] << 8) | b[3];
     }
 
     private static IPAddress FromUInt32(uint value)
     {
-        byte[] bytes = new byte[]
+        var bytes = new byte[]
         {
             (byte)(value >> 24),
             (byte)(value >> 16),

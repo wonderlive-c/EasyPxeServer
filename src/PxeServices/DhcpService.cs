@@ -12,17 +12,18 @@ using PxeStorageLite;
 
 namespace PxeServices
 {
-    // 在关键操作和分支处增加详细日志，便于调试
+    /// <summary>
+    /// DHCP服务
+    /// </summary>
+    /// <param name="logger"></param>
+    /// <param name="serviceProvider"></param>
     public class DhcpService(ILogger<DhcpService> logger, IServiceProvider serviceProvider) : IHostedService
     {
         private CancellationTokenSource? _cancellationTokenSource;
-
-        static  byte         nextIP = 10;
-        private DHCPServer?  dhcpServer;
-        private DhcpSetting? dhcp;
+        private DHCPServer?              dhcpServer;
+        private DhcpSetting?             dhcp;
 
         public bool   IsRunning           => dhcpServer != null;
-        public string BootFileName        => dhcp?.BootFile;
         public string NextServerIp        { get; set; } = "";
         public string SelectedInterfaceIp { get; set; } = "";
 
@@ -63,7 +64,9 @@ namespace PxeServices
                 var mac  = ByteArrayToString(dhcpRequest.GetChaddr());
 
                 logger.LogInformation("收到DHCP请求，来自: {RemoteEndPoint}", mac);
+            #if DEBUG
                 DebugRequest(dhcpRequest);
+            #endif
 
                 using var scope              = serviceProvider.CreateScope();
                 var       dhcpUserRepository = scope.ServiceProvider.GetRequiredService<IDhcpUserRepository>();

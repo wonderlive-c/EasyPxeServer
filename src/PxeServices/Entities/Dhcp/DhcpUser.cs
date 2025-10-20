@@ -4,8 +4,14 @@ using System.Net;
 
 namespace PxeStorageLite;
 
+/// <summary>
+/// DHCP用户实体
+/// </summary>
 public class DhcpUser : Entity<Guid>
 {
+    /// <summary>
+    /// 使能
+    /// </summary>
     public bool IsEnabled    { get; set; }
     public bool IsSuperUser  { get; set; }
     public bool IsAuthorized { get; set; }
@@ -76,7 +82,7 @@ public class DhcpUser : Entity<Guid>
 
     #region Implementation of IEntity<Guid>
 
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public override Guid Id { get; set; } = Guid.NewGuid();
 
     #endregion
 }

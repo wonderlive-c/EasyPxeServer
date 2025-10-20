@@ -31,7 +31,7 @@ namespace PxeServices
             var newConnection = new VncConnection
             {
                 Id             = Guid.TryParse(connectionId, out var id) ? id : Guid.NewGuid(),
-                ConnectionName = "Connection-" + host + "-" + connectionId,
+                ConnectionName = "Connection-" + vncHost + "-" + connectionId,
                 ConnectionId   = connectionId,
                 Host           = vncHost,
                 Port           = vncPort,
@@ -46,7 +46,11 @@ namespace PxeServices
 
             return newConnection;
         }
-
+        /// <summary>
+        /// 获取指定ID的VNC连接
+        /// </summary>
+        /// <param name="connectionId"></param>
+        /// <returns></returns>
         public async Task<VncConnection?> GetConnection(string connectionId)
         {
             if (Guid.TryParse(connectionId, out var guid))

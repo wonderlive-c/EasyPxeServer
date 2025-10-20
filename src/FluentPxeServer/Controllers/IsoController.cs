@@ -10,13 +10,13 @@ namespace FluentPxeServer.Controllers
     [ApiController]
     public class IsoController(ILogger<IsoController> logger) : ControllerBase
     {
-        private string ISO_DIR => ConstSetting.ISO_ROOT;
+        private static string IsoDir => ConstSetting.ISO_ROOT;
 
         // 示例：/api/iso/browse?isoPath=xxx.iso&path=folder1/file.txt
         [HttpGet("browse")]
         public async Task<IActionResult> Browse([FromQuery] string isoPath, [FromQuery] string path = "")
         {
-            isoPath = Path.Combine(ISO_DIR, isoPath);
+            isoPath = Path.Combine(IsoDir, isoPath);
             if (string.IsNullOrEmpty(isoPath)
              || !System.IO.File.Exists(isoPath))
             {
@@ -79,7 +79,7 @@ namespace FluentPxeServer.Controllers
             if (dirPath != "/")
             {
                 var parent = dirPath.TrimEnd('/');
-                parent = parent.Contains('/') ? parent.Substring(0, parent.LastIndexOf('/')) : "";
+                parent = parent.Contains('/') ? parent[..parent.LastIndexOf('/')] : "";
                 if (string.IsNullOrEmpty(parent)) parent = "/";
                 sb.AppendLine($"<a href=\"?isoPath={HttpUtility.UrlEncode(Request.Query["isoPath"])}&path={HttpUtility.UrlEncode(parent.Trim('/'))}\">../</a>");
             }
@@ -102,28 +102,6 @@ namespace FluentPxeServer.Controllers
 
             sb.AppendLine("</pre><hr></body></html>");
             return sb.ToString();
-        }
-
-        // 示例：/api/iso/download/{fileName}
-        [HttpGet("download/{*fileName}")]
-        public IActionResult Download(string fileName)
-        {
-            if (string.IsNullOrEmpty(fileName))
-            {
-                logger.LogInformation("未指定文件名");
-                return NotFound("未指定文件名");
-            }
-
-            var isoPath = Path.Combine(ISO_DIR, fileName);
-            if (!System.IO.File.Exists(isoPath))
-            {
-                logger.LogInformation("ISO文件不存在: {Path}", isoPath);
-                return NotFound("ISO文件不存在");
-            }
-
-            var stream = System.IO.File.OpenRead(isoPath);
-            var downloadName = Path.GetFileName(isoPath);
-            return File(stream, "application/octet-stream", downloadName);
         }
     }
 }

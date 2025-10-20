@@ -29,7 +29,7 @@
         <FluentStack Class="body-stack" Orientation="Orientation.Horizontal" Width="100%" HorizontalGap="0">
             <NavMenu/>
             <div class="sidebar"></div>
-            <FluentBodyContent id="body-content" Style="height: calc(100dvh - 90px);">
+            <FluentBodyContent id="body-content" Style="height: 100%;">
                 <div class="content">
                     <FluentCard>
                     @Body
@@ -47,7 +47,7 @@
             <div class="version">
                 Version: @AppVersionService.Version
                 &nbsp;-&nbsp;
-                <a href="https://dotnet.microsoft.com/en-us/learn/aspnet/what-is-aspnet-core">Powered by @AppVersionService.CompanyName</a>
+                Powered by @AppVersionService.CompanyName
             </div>
             <FluentSpacer/>
             <div class="copy">

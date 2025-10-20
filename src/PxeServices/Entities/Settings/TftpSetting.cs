@@ -2,7 +2,7 @@
 
 public class TftpSetting
 {
-    public static TftpSetting Default = new()
+    public static readonly TftpSetting Default = new()
     {
         TftpEnabled = true, TftpShareFolder = "tftpboot", Port = 69
     };
