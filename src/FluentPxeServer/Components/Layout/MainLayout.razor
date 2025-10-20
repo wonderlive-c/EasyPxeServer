@@ -36,13 +36,13 @@
                     </FluentCard>
                 </div>
             </FluentBodyContent>
-            <FluentToastProvider Position="ToastPosition.TopCenter" MaxToastCount="10" />
-            <FluentDialogProvider />
-            <FluentTooltipProvider />
-            <FluentKeyCodeProvider />
-            <FluentMenuProvider />
+     
         </FluentStack>
-
+        <FluentToastProvider Position="ToastPosition.TopCenter" MaxToastCount="10" />
+        <FluentDialogProvider />
+        <FluentTooltipProvider />
+        <FluentKeyCodeProvider />
+        <FluentMenuProvider />
         <FluentFooter Style="@("height: 40px; color: white;  font-size: var(--type-ramp-minus-1-font-size); line-height: var(--type-ramp-base-line-height);")">
             <div class="version">
                 Version: @AppVersionService.Version

@@ -41,7 +41,7 @@
 <!-- 上传文件对话框 -->
 <FluentDialog Hidden="@ShowUploadModalFlag">
     <FluentDialogHeader>
-        <FluentHeader>上传文件到TFTP目录</FluentHeader>
+        <FluentLabel>上传文件到TFTP目录</FluentLabel>
     </FluentDialogHeader>
     <FluentDialogBody>
         <InputFile OnChange="HandleFileSelection"/>
@@ -55,7 +55,7 @@
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
-<FluentDialogProvider/>
+@*<FluentDialogProvider/>*@
 
 @code {
 

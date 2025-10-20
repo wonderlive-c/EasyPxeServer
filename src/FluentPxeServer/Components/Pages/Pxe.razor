@@ -9,7 +9,7 @@
 
 <PageTitle>PXE服务器管理</PageTitle>
     <FluentStack Orientation="Orientation.Vertical">
-        <FluentCard AreaRestricted="true" MinimalStyle="true">
+        <FluentCard AreaRestricted="false" MinimalStyle="true">
             <FluentStack>
                 <FluentLabel>选择网络接口</FluentLabel>
                 <FluentSelect Items="NetworkInterfaces"
@@ -51,20 +51,10 @@
                 </FluentGridItem>
 
                 <FluentGridItem>
-                    <FluentStack Orientation="Orientation.Vertical">
-                        <FluentLabel>DHCP服务器状态</FluentLabel>
-                        <FluentStack Orientation="Orientation.Vertical">
-                            <FluentLabel>TFTP服务器：@(DhcpService.IsRunning ? "运行中" : "已停止")</FluentLabel>
-                        </FluentStack>
-                    </FluentStack>
+                    <FluentLabel>DHCP服务器：@(DhcpService.IsRunning ? "运行中" : "已停止")</FluentLabel>
                 </FluentGridItem>
                 <FluentGridItem>
-                    <FluentStack Orientation="Orientation.Vertical">
-                        <FluentLabel>TFTP服务器状态</FluentLabel>
-                        <FluentStack Orientation="Orientation.Vertical">
-                            <FluentLabel>TFTP服务器：@(TftpService.IsRunning ? "运行中" : "已停止")</FluentLabel>
-                        </FluentStack>
-                    </FluentStack>
+                    <FluentLabel>TFTP服务器：@(TftpService.IsRunning ? "运行中" : "已停止")</FluentLabel>
                 </FluentGridItem>
             </FluentGrid>
         </FluentCard>
