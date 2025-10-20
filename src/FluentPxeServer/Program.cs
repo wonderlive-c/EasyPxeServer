@@ -28,7 +28,7 @@ namespace FluentPxeServer
             builder.Services.AddServerSideBlazor();
             builder.Services.AddFluentUIComponents();
             builder.Services.AddFluentUIServerServices();
-            builder.Logging.AddSerilog();
+            builder.Services.AddSerilog();
             builder.Services.AddControllers().AddJsonOptions(options =>options.JsonSerializerOptions.Converters.Add(new IPAddressJsonConverter()));
             builder.Services.AddSingleton<DhcpService>();
             builder.Services.AddSingleton<TftpService>();
@@ -44,15 +44,10 @@ namespace FluentPxeServer
             var app = builder.Build();
             using (var scope = app.Services.CreateScope())
             {
-                // 从作用域中获取服务提供程序
                 var scopedProvider = scope.ServiceProvider;
-
-                // 现在可以安全地解析DbContext了
-
                 try
                 {
                     await using var db = scopedProvider.GetRequiredService<PxeDbContext>();
-
                     var created = db.Database.EnsureCreatedAsync();
                     Log.Information("Database created: {created}", created.IsCompletedSuccessfully);
                 }
@@ -81,7 +76,7 @@ app.UseStaticFiles();
             app.MapControllers();
             app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
-            app.Run();
+            await app.RunAsync();
         }
     }
 }
